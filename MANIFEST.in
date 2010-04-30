@@ -1,0 +1,11 @@
+include README LICENSE COPYING MANIFEST MANIFEST.in NOTICE AUTHORS
+include PyOFTK/sspropvc/*.py
+include PyOFTK/sspropvc/*.c
+include PyOFTK/sspropvc/*.h
+include PyOFTK/sspropvc/*.i
+include PyOFTK/freespace/*.py
+include PyOFTK/freespace/*.c
+include PyOFTK/freespace/*.h
+include PyOFTK/freespace/*.i
+include PyOFTK/examples/*.py
+include PyOFTK/data/*.*
