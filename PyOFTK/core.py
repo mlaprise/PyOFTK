@@ -29,9 +29,6 @@ from pygraph.algorithms.searching import breadth_first_search
 from pygraph.readwrite.dot import write
 from pygraph.mixins.basegraph import basegraph
 
-# Import pygraphviz
-from pygraphviz import *
-
 
 class OFTKDevice:
 	''' Class representing a generic PYOFTK device '''
@@ -802,6 +799,9 @@ class apodizedFBG(FibreStepIndex):
 		return pow(self.beta1(wavelength),M)*diffOrder4[nbrSamples/2]
 
 	def vg(self, wavelength):
+		'''		
+		Speed of light in fiber without the effect of the grating
+		'''
 		return (299792458/self.averageIndex)*sqrt(1-(pow(self.kappa(wavelength),2)/pow(self.detuning(wavelength),2)) )
 		
 

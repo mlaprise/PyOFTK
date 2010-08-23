@@ -70,6 +70,19 @@ def diffOrder4N(y, x, N):
 	return [yBuffer, xBuffer]
 
 
+def TBWP(t, SVEAAmp):
+	'''
+	Time-bandwidth product (TBWP)
+	!!!!!!!!!!!! Not finish !!!!!!!!!!!!!
+	'''
+	w = angFreq(t)
+	vs = fftpack.fftshift(w/(2*pi))
+	intensity = pow(abs(SVEAAmp),2)
+	timeWidth = FWHM(t, pow(abs(SVEAAmp),2))
+	pulseBW = FWHM(vs, pow(abs(vs),2))
+	return timeWidth*pulseBW
+
+
 def pulseSpectrum(t, SVEAAmp, lambdaZero = 0.0, units = 'nm'):
 	'''
 	Compute the spectrum of o SVEA pulse center at lambdaZero
@@ -88,8 +101,8 @@ def pulseSpectrum(t, SVEAAmp, lambdaZero = 0.0, units = 'nm'):
 
 	# Assign uniScale 
 	unitScale = {
-	  'nm': lambda: 1e9,
-	  'um': lambda: 1e6,
+	  'nm': lambda: 1.0e9,
+	  'um': lambda: 1.0e6,
 	  'm': lambda: 1.0
 	}[units]()
 
@@ -711,7 +724,7 @@ def normalize(t, pulseInt):
 
 
 def recenter(t, pulseInt):
-	maxPos = where(pulseInt==pulseInt.max())
+	maxPos = where(pulseInt==pulseInt.max())[0][0]
 	t2 = t - t[maxPos]
 	return t2
 
