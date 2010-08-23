@@ -1,0 +1,41 @@
+# *********************************************
+#	Makefile pour la library _fkabcd.so
+#
+#
+#
+#
+#
+#	Author: 	Martin Laprise
+#		    	Universite Laval
+#				martin.laprise.1@ulaval.ca
+#                 
+# *********************************************
+
+
+CLEANFILES = *.o *.a *.so
+
+
+_fkabcd.so:			fkabcd.o fkabcd_wrap.o libfkabcd.a
+					icc -xT -shared  fkabcd.o fkabcd_wrap.o -o _fkabcd.so -lfftw -lm -lpython2.5
+
+libfkabcd.a:		fkabcd.o
+					ar rc libfkabcd.a fkabcd.o
+
+fkabcd_wrap.cpp:	fkabcd.i fkabcd.h numpy.i
+					swig -python -c++ fkabcd.i
+
+fkabcd_wrap.o:		fkabcd_wrap.cpp
+					icc -o fkabcd_wrap.o -c -O3 -fPIC -xT -mtune=core2 -m64 fkabcd_wrap.cxx -lm -lfftw -I/usr/include/python2.5
+
+fkabcd.o:			fkabcd.cpp
+					icc -o fkabcd.o -c -O3 -fPIC -xT -mtune=core2 -m64 fkabcd.cpp -lm -lfftw
+
+# *********************************************
+# Clean-up rules
+# *********************************************
+
+clean:
+	-rm -f $(CLEANFILES)
+
+					
+

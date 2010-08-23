@@ -27,7 +27,7 @@ fkabcd_wrap.cpp:	fkabcd.i fkabcd.h numpy.i
 					swig -python -c++ fkabcd.i
 
 fkabcd_wrap.o:		fkabcd_wrap.cpp
-					gcc -o fkabcd_wrap.o -c -O3 -fomit-frame-pointer -fPIC -funroll-loops -m64 fkabcd_wrap.cxx -I/usr/include/python2.6
+					gcc -o fkabcd_wrap.o -c -O3 -fomit-frame-pointer -fPIC -funroll-loops -m64 fkabcd_wrap.cxx -I/usr/local/lib/python2.6/dist-packages/numpy/core/include/ -I/usr/include/python2.6/
 
 fkabcd.o:			fkabcd.cpp
 					gcc -o fkabcd.o -c -O3 -fomit-frame-pointer -fPIC -funroll-loops -m64 fkabcd.cpp
@@ -43,7 +43,7 @@ fkabcd_wrap.cpp:	fkabcd.i fkabcd.h numpy.i
 					swig -python -c++ fkabcd.i
 
 fkabcd_wrap.o:		fkabcd_wrap.cpp
-					gcc -o fkabcd_wrap.o -c -O3 -fomit-frame-pointer -fPIC -funroll-loops fkabcd_wrap.cxx -I/usr/include/python2.6
+					gcc -o fkabcd_wrap.o -c -O3 -fomit-frame-pointer -fPIC -funroll-loops fkabcd_wrap.cxx -I/usr/local/lib/python2.6/dist-packages/
 
 fkabcd.o:			fkabcd.cpp
 					gcc -o fkabcd.o -c -O3 -fomit-frame-pointer -fPIC -funroll-loops fkabcd.cpp
