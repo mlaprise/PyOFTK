@@ -1,7 +1,7 @@
 PyOFTK: Python Optical Fiber ToolKit
 ++++++++++++++++++++++++++++++++++++
 
-The goal of the Python Optical Fiber ToolKit is to provide a group of optical fiber related Python/Numpy functions and class in one coherent package in such a way that undergraduates students can explore and make simple calculation about optical fiber. PyOFTK is a work-in-progress project and for now it’s more like a whole bunch of functions and class I made for my own use during my graduate research. I 
+PyOFTK is a Python/Numpy library for helping the developement of numerical simulation of optical pulses in optical fiber. PyOFTK is a work-in-progress project and for now it’s more like a whole bunch of functions and class I made for my own use during my graduate research.
 
 
 Here is a simple example how we can use PyOFTK in iPython::
