@@ -21,6 +21,7 @@ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 from numpy import *
 import matplotlib.pyplot as pl
 from PyOFTK.utilities import *
+import scipy.interpolate as itrp
 
 # Import pygraph
 from pygraph.classes.graph import graph
@@ -141,7 +142,9 @@ class OFTKExperiment(digraph, basegraph):
 
 
 class eFieldSVEA:
-	''' Class representing the SVEA envellope of the field '''
+	'''
+	Class representing the SVEA envellope of the field
+	'''
 
 	def __init__(self, T, nt, zlength, nz, lambdaZero, ):
 		self.nt = nt
@@ -182,21 +185,68 @@ class eFieldSVEA:
 			pl.show()
 
 
-class cwSource(OFTKDevice):
+class cwLaser(OFTKDevice):
 	'''
-	Class representing a CW light source
+	Class representing a cw laser
+		* wavelength : Central wavelength of the source [um]
+		* power: Mean power of the source [W]
+		* linewidth: Linewidth of the source [MHz]
 	'''
 	
-	def __init__(self, wavelength, power):
+	def __init__(self, wavelength, power, linewidth = 10E6):
 		OFTKDevice.__init__(self)
 		self.wavelength = wavelength
 		self.power = power
+		self.linewidth = linewidth
 
 	def __repr__(self):
-		return "CW Source" + self.__instance_name__
+		return "CW Laser" + self.__instance_name__
 	
 	def info(self):
-		print "Wavlength of this cw source: " + str(self.wavelength) + " um"
+		print "Wavelength: " + str(self.wavelength) + " um"
+		print "Output power: " + str(self.power) + " mW"
+
+
+class pumpLaser(cwLaser):
+	'''
+	Class representing a pump laser
+		* wavelength : Central wavelength of the source [um]
+		* power: Mean power of the source [W]
+		* linewidth: Linewidth of the source [MHz]
+	'''
+	
+	def __init__(self, wavelength, power, linewidth = 10E6):
+		cwLaser.__init__(self,wavelength, power, linewidth)
+
+	def __repr__(self):
+		return "Pump Laser" + self.__instance_name__
+	
+	def info(self):
+		print "Wavelength: " + str(self.wavelength) + " um"
+		print "Output power: " + str(self.power) + " mW"
+
+
+class pulsedSource(OFTKDevice):
+	'''
+	Class representing a CW light source
+		* wavelength : Wavelength of the source (lambda zero for a pulsed source) [nm]
+		* power: Mean power of the source [mW]
+		* reprate: Repetition Rate of the source [mhz]
+		* pulseShape: Temporal shape of the pulses
+	'''
+	
+	def __init__(self, wavelength, power, reprate):
+		OFTKDevice.__init__(self)
+		self.wavelength = wavelength
+		self.power = power
+		self.rapRate = reprate
+
+	def __repr__(self):
+		return "Pulsed Source" + self.__instance_name__
+	
+	def info(self):
+		print "Wavelength of this cw source: " + str(self.wavelength) + " um"
+		print "Repetition Rate: " + str(self.repRate) + " Mhz"
 		print "Output power: " + str(self.power) + " mW"
 
 
@@ -204,6 +254,11 @@ class cwSource(OFTKDevice):
 class FibreStepIndex(OFTKDevice):
 	'''
 	Class representing a simple step index fiber
+		* fibreCoeur: Radius of the core [um]
+		* fibreClad: Radius of the clad [um]
+		* Germanium concentration of the core [mass %]
+		* Germanium concentration of the clad [mass %]
+		* Length of the fiber [m]
 	'''
 
 	def __init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, description="Step Index Fiber"):
@@ -214,10 +269,20 @@ class FibreStepIndex(OFTKDevice):
 		self.rayonClad = fibreClad
 		self.coeurConcGe = coeurConcGe
 		self.cladConcGe = cladConcGe
+		self.length = length
 		
-
 	def __str__(self):
 		return "Fibre Step Index"
+
+	def __repr__(self):
+		return "Fibre Step Index"
+
+	def bgLoss(self, wavelength):
+		'''
+		Return the background loss for a given wavelength
+		Not implemented yet ... 
+		'''
+		return 0.0
 
 	def vNumber(self, wavelength):
 		indiceCoeur = sellmeier(self.coeurConcGe, wavelength)
@@ -233,8 +298,11 @@ class FibreStepIndex(OFTKDevice):
 		return self.rayonCoeur*(0.65+(1.619/pow(self.vNumber(wavelength),3.0/2.0))+(2.879/(pow(self.vNumber(wavelength),6.0))))
 
 	def modeOverlap(self, wavelength):
-		# Estimation de la largeur du mode pour une
-		# fibre step-index avec une l'approx gaussienne
+		'''
+		Estimation de la largeur du mode pour une
+		fibre step-index avec une l'approx gaussienne
+			* Wavelength: Wavelength of the mode [um]
+		'''
 		w = self.width(wavelength)
 		return 1 - exp(-pow((self.rayonCoeur/w),2.0))
 
@@ -324,7 +392,7 @@ class FibreStepIndex(OFTKDevice):
 		'''
 		Solve the caracteristic equation with fminbound scipy function
 		return the eigenvalues u with an error stop_crit
-		eq. (3.45), Fondamentals of Optical Fiber, John. A. Buck
+		eq. (3.45), Fonself.taudamentals of Optical Fiber, John. A. Buck
 		
 			* l : 		l parameter of the LP mode
 			* m : 		m parameter of the LP mode
@@ -454,7 +522,8 @@ class FibreStepIndex(OFTKDevice):
 			* nbrPoints:  Plot the mode with a nbrPoints x nbrPoints matrix
 			* showCore:	if == 1 Show the core of the fiber
 		'''
-
+		self.wlMin = 0.850
+		self.wlMax = 1.100
 		plotSize = 4*self.rayonCoeur
 		I_zero = 1
 		IntensiteLP = zeros([nbrPoints, nbrPoints])
@@ -510,14 +579,10 @@ class FibreStepIndex(OFTKDevice):
 
 class Fiber():
 	'''
-
 	Class representing am axisymmetric optical fiber with
 	an arbitrary index profile
-
-		* indexProfile: Fiber radial index profile
-						
+		* indexProfile: Fiber radial index profile		
 		* length:		Length of the fiber
-
 	'''
 	def __init__(self, indexProfile, length):
 		self.length = length
@@ -531,61 +596,132 @@ class coupler1x2(FibreStepIndex):
 		FibreStepIndex.__init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, description)
 
 
-class FibreYb(FibreStepIndex):
-	''' Class representing a Ytterbium-doped step index fiber
-		Inherihit from FibreStepIndex class
+class YbDopedFiber(FibreStepIndex):
+	'''
+	Class representing a typical Ytterbium-doped step index fiber
+	Inherihit from FibreStepIndex class
 	'''
 	
 	def __init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, N, description="Yb-Doped Step Index Fiber"):
 		FibreStepIndex.__init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, description)
 		self.concDopant = N
-		# Construction d'une curve de cross-Section interpole
-		eCrossSection = pl.load('CrossSectionEm.dat')
-		aCrossSection = pl.load('CrossSectionAbs.dat')
-		aCrossSectionZoom = pl.load('CrossSectionAbs_Zoom.dat')
-
-		# Petite passe pour que le pics a 975 fit en emission et en absorption
-		aCrossSection_norm = aCrossSection[:,1]*(eCrossSection[:,1].max()/aCrossSection[:,1].max())
-
-		eCS_spline = scipy.interpolate.splrep(eCrossSection[:,0],  signal.wiener(eCrossSection[:,1],5,10))
-		aCS_spline = scipy.interpolate.splrep(aCrossSection[:,0]*1E9,  signal.wiener(aCrossSection_norm,5,10))
-		aCSZoom_spline = scipy.interpolate.splrep(aCrossSectionZoom[:,0]*1E9,  signal.wiener(aCrossSectionZoom[:,1],5,10))
-
-		self.eCS_WL = arange(850, 1100, 1)
-		self.aCS_WL = arange(850, 1001 ,1)
-		aCSZoom_WL = arange(1001, 1100, 1)
-		self.eCS_int = scipy.interpolate.splev(self.eCS_WL, self.eCS_spline)
-		aCSLeft_int = scipy.interpolate.splev(self.aCS_WL, self.aCS_spline)
-		aCSRight_int = scipy.interpolate.splev(aCSZoom_WL, aCSZoom_spline)
-		self.aCS_int = r_[aCSLeft_int, aCSRight_int]
+		self.tau = 0.850E-3
+		self.pumpOverlap = 0.8
+		self.wlMin = 0.850
+		self.wlMax = 1.100
+		csFile = load('cross_section_ytterbium.npz')
+		self.csEm = csFile['cross_em'][:,1]
+		self.csAbs = csFile['cross_abs'][:,1]
+		self.csAbsZoom = csFile['cross_abs_zoom'][:,1]
+		self.csEmWL = csFile['cross_em'][:,0]
+		self.csAbsWL = csFile['cross_abs'][:,0]
+		self.csAbsZoomWL = csFile['cross_abs_zoom'][:,0]
+		self.csEmSpline = itrp.splrep(self.csEmWL, self.csEm)
+		self.csAbsSpline = itrp.splrep(self.csAbsWL, self.csAbs)
+		self.csAbsZoomSpline = itrp.splrep(self.csAbsZoomWL, self.csAbsZoom)
 
 	def __repr__(self):
 		return "Yb-doped Step Index Fiber"
 
-	def alpha(self, wavelength):
-		print "Coming soon !"
+	def set_tau(self,tau):
+		self.tau = tau
 
-	def eCS(self, wavelength):
-		print "Coming soon !"
+	def crossSection(self, WLum):
+		'''
+		Return the emission and absorption cross-section for any
+		wavelength between 850 and 1150 nm
+		'''
+		WL = WLum*1E3
+		if isinstance(WLum, numpy.ndarray):
+			LNGTH = len(WL)
+			csEm = zeros(LNGTH)
+			csAbs = zeros(LNGTH)
+			for i in arange(LNGTH):
+				if WL[i] < self.csAbsZoomWL.min():
+					csEm[i] = itrp.splev(WL[i],self.csEmSpline)
+					csAbs[i] = itrp.splev(WL[i],self.csAbsSpline)
+				else:
+					csEm[i] = itrp.splev(WL[i],self.csEmSpline)
+					csAbs[i] = itrp.splev(WL[i],self.csAbsZoomSpline)
+			return [csEm,csAbs]
+		else:
+			if WL < self.csAbsZoomWL.min():
+				return [itrp.splev(WL,self.csEmSpline),itrp.splev(WL,self.csAbsSpline)]
+			else:
+				return [itrp.splev(WL,self.csEmSpline),itrp.splev(WL,self.csAbsZoomSpline)]
 
-	def aCS(self, wavelength):
-		print "Coming soon !"
+
+class YbDopedDCOF(YbDopedFiber):
+	'''
+	Class representing a typical double-clad Ytterbium-doped step index fiber
+	Inherihit from YbDopedFiber class
+	'''
+	
+	def __init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, N, description="Yb-Doped Double-clad Step Index Fiber"):
+		YbDopedFiber.__init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, N, description)
+
+	def __repr__(self):
+		return "Yb-doped double-clad Step Index Fiber"
+
+	def doublecladOverlap(self, wavelength):
+		return pow(self.rayonCoeur,2.0) / pow(self.rayonClad,2)
 
 
-class FibreEr(FibreStepIndex):
-	''' Class representing a Erbium-doped step index fiber
-		Inherihit from FibreStepIndex class
+class ErDopedFiber(FibreStepIndex):
+	'''
+	Class representing a typical Erbium-doped step index fiber
+	Inherihit from FibreStepIndex class
 	'''
 	
 	def __init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, N, description="Er-Doped Step Index Fiber"):
 		FibreStepIndex.__init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, description)
 		self.concDopant = N
+		self.tau = 10E-3
+		self.pumpOverlap = 0.8
+		self.wlMin = 1.450
+		self.wlMax = 1.650
+		csFile = load('cross_section_erbium.npz')
+		self.csEm = csFile['cross_em']
+		self.csAbs = csFile['cross_abs']
+		self.csAbs980 = csFile['cross_abs_980']
+		self.csWL = csFile['wavelength']
+		self.csWL980 = csFile['wavelength980']
+		self.csEmSpline = itrp.splrep(self.csWL, self.csEm)
+		self.csAbsSpline = itrp.splrep(self.csWL, self.csAbs)
+		self.csAbs980Spline = itrp.splrep(self.csWL980, self.csAbs980)
+	def __repr__(self):
+		return "Er-doped Step Index Fiber"
+
+	def crossSection(self, WLum):
+		'''
+		Return the emission and absorption cross-section for any
+		wavelength between 1450 and 1650 nm
+		'''
+		WL = WLum*1E3
+		if isinstance(WLum, numpy.ndarray):
+			LNGTH = len(WL)
+			csEm = zeros(LNGTH)
+			csAbs = zeros(LNGTH)
+			for i in arange(LNGTH):
+				if WL[i] < self.csWL980.max() and WL[i] > self.csWL980.min():
+					csEm[i] = 0.0
+					csAbs[i] = itrp.splev(WL[i],self.csAbs980Spline)
+				else:
+					csEm[i] = itrp.splev(WL[i],self.csEmSpline)
+					csAbs[i] = itrp.splev(WL[i],self.csAbsSpline)
+			return [csEm,csAbs]
+		else:
+			if WL < self.csWL980.max() and WL > self.csWL980.min():
+				return [0.0, itrp.splev(WL,self.csAbs980Spline)]
+			else:
+				return [itrp.splev(WL,self.csEmSpline),itrp.splev(WL,self.csAbsSpline)]
 
 
 # Definition de la class fbg heritee de la class FibreStepIndex
 class fbg(FibreStepIndex):
-	''' Class representing a fiber bragg grating in a step index fiber
-		Inherihit from FibreStepIndex class
+	''' 
+	Class representing a fiber bragg grating in a step index fiber
+	Inherihit from FibreStepIndex class
 	'''
 
 	def __init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, L, fbgDelta, fbgLambda):
@@ -609,8 +745,9 @@ class fbg(FibreStepIndex):
 
 
 class simpleFBG(FibreStepIndex):
-	''' Class representing a uniform fiber bragg grating in a step index fiber
-		Inherihit from FibreStepIndex class
+	'''
+	Class representing a uniform fiber bragg grating in a step index fiber
+	Inherihit from FibreStepIndex class
 	'''
 
 	def __init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, L, fbgDelta, fbgLambda):
@@ -644,8 +781,9 @@ class simpleFBG(FibreStepIndex):
 
 
 class apodizedFBG(FibreStepIndex):
-	''' Class representing a apodized fiber bragg grating in a step index fiber
-		Inherihit from FibreStepIndex class
+	'''
+	Class representing a apodized fiber bragg grating in a step index fiber
+	Inherihit from FibreStepIndex class
 	'''
 
 	def __init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, L, fbgDelta, fbgLambda):
@@ -665,11 +803,27 @@ class apodizedFBG(FibreStepIndex):
 
 	def kappa(self, wavelength):
 		# Coupling coefficient [m-1]
-		return pi*self.deltaIndex*self.eta / (self.braggWavelength*1e-6)
+
+		if isinstance(wavelength, numpy.ndarray):
+			LNGTH = len(wavelength)
+			kapVec = zeros(LNGTH)
+			for i in arange(LNGTH):
+				kapVec[i] = pi*self.deltaIndex*self.eta / (wavelength[i]*1e-6)
+			return kapVec
+		else:
+			return pi*self.deltaIndex*self.eta / (wavelength*1e-6)
 
 	def detuning(self, wavelength):
-		angFrequency = 2*pi*(299792458)/(wavelength*1e-6)
-		return (self.averageIndex/299792458)*(angFrequency-self.angFrequencyBragg)
+		if isinstance(wavelength, numpy.ndarray):
+			LNGTH = len(wavelength)
+			detVec = zeros(LNGTH)
+			for i in arange(LNGTH):
+				angFrequency = 2*pi*(299792458)/(wavelength[i]*1e-6)
+				detVec[i] = (self.averageIndex/299792458)*(angFrequency-self.angFrequencyBragg)
+			return detVec
+		else:
+			angFrequency = 2*pi*(299792458)/(wavelength*1e-6)
+			return (self.averageIndex/299792458)*(angFrequency-self.angFrequencyBragg)
 
 	def detuningw(self, angFrequency):
 		return (self.averageIndex/299792458)*(angFrequency-self.angFrequencyBragg)
@@ -692,7 +846,15 @@ class apodizedFBG(FibreStepIndex):
 				qVec[i] = sqrt(pow(self.detuning(wavelength[i]),2) - pow(self.kappa(wavelength[i]),2))
 			return qVec
 		else:
-			return sqrt(pow(self.detuning(wavelength),2) - pow(self.kappa(wavelength),2))
+			q = sqrt(pow(self.detuning(wavelength),2) - pow(self.kappa(wavelength),2))
+			sign = 1
+			'''
+			if abs((q-self.detuning(wavelength))/self.kappa(wavelength)) < 1:
+				sign = 1
+			else:
+				sign = -1
+			'''
+			return sign*q
 
 	def qdet(self, det):
 		'''
@@ -724,15 +886,24 @@ class apodizedFBG(FibreStepIndex):
 
 	def reflectivity(self, wavelength):
 		# Equation 1.3.29 d'Agrawal (Application)
-		a = 1.0j * self.kappa(wavelength) * sin(self.q(wavelength)*self.length)
-		b = self.q(wavelength) * cos(self.q(wavelength)*self.length)
-		c = -1.0j * self.detuning(wavelength) * sin(self.q(wavelength)*self.length)
-		return a/(b+c)
+		if isinstance(wavelength, numpy.ndarray):
+			LNGTH = len(wavelength)
+			wlArray = zeros(LNGTH)
+			for i in arange(LNGTH):
+				a = 1.0j * self.kappa(wavelength[i]) * sin(self.q(wavelength[i])*self.length)
+				b = self.q(wavelength[i]) * cos(self.q(wavelength[i])*self.length)
+				c = -1.0j * self.detuning(wavelength[i]) * sin(self.q(wavelength[i])*self.length)
+				wlArray[i] = pow(abs(a/(b+c)),2)
+			return wlArray
+		else:
+			a = 1.0j * self.kappa(wavelength) * sin(self.q(wavelength)*self.length)
+			b = self.q(wavelength) * cos(self.q(wavelength)*self.length)
+			c = -1.0j * self.detuning(wavelength) * sin(self.q(wavelength)*self.length)
+			return pow(abs(a/(b+c)),2)
 
 	def maxReflectivity(self):
-		# hack pas rapport ... parce que kappa doit avoir la longueur d'onde (qui sert pas !)
-		wavelength = 1.0
-		return pow(tanh(self.kappa(wavelength)*self.length),2)
+		
+		return pow(tanh(self.kappa(self.braggWavelength)*self.length),2)
 
 	def gBeta2(self, wavelength):
 		# Grating dispersion [s2 m-1]
@@ -749,7 +920,6 @@ class apodizedFBG(FibreStepIndex):
 		c = pow(self.kappa(wavelength),2)/pow(self.detuning(wavelength),2)
 		d = pow(1-pow(self.kappa(wavelength)/self.detuning(wavelength),2),5.0/2.0)
 		return 3*(a*b*c)/d
-
 
 	def gBetaMwl(self, lambdaVec, M):
 		# Grating dispersion order M [sM m-1]
@@ -803,6 +973,11 @@ class apodizedFBG(FibreStepIndex):
 		Speed of light in fiber without the effect of the grating
 		'''
 		return (299792458/self.averageIndex)*sqrt(1-(pow(self.kappa(wavelength),2)/pow(self.detuning(wavelength),2)) )
+
+	def tmMethod(self):
+		'''
+		Implementation of the Transfer Matrix Method
+		'''
 		
 
 class apodizedFBGv(FibreStepIndex):

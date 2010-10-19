@@ -30,5 +30,7 @@ from frog import *
 from pulse import *
 from utilities import *
 from nlfbg import *
+from amplifier import *
+from cavity import *
 from genSpline import *
 import freespace

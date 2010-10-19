@@ -29,4 +29,6 @@ from ssf import *
 from pulse import *
 from utilities import *
 from nlfbg import *
+from amplifier import *
+from cavity import *
 import freespace
