@@ -1,0 +1,788 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Complete reference &mdash; PyOFTK v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PyOFTK v0.1 documentation" href="index.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PyOFTK v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PyOFTK">
+<h1>Complete reference<a class="headerlink" href="#module-PyOFTK" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="reference-html"></span><div class="section" id="function">
+<h2>Function<a class="headerlink" href="#function" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="PyOFTK.gaussianPulse">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">gaussianPulse</tt><big>(</big><em>t</em>, <em>FWHM</em>, <em>t0</em>, <em>P0</em>, <em>m</em>, <em>C</em><big>)</big><a class="headerlink" href="#PyOFTK.gaussianPulse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Geneate a gaussian/supergaussiance envelope pulse</p>
+<blockquote>
+<ul class="simple">
+<li>field_amp:    output gaussian pulse envellope (amplitude).</li>
+<li>t:                    vector of times at which to compute u</li>
+<li>t0:                           center of pulse (default = 0)</li>
+<li>FWHM:                 full-width at half-intensity of pulse (default = 1)</li>
+<li>P0:                   peak intensity of the pulse &#64; t=t0 (default = 1)</li>
+<li>m:                    Gaussian order (default = 1)</li>
+<li>C:                    chirp parameter (default = 0)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.sechPulse">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">sechPulse</tt><big>(</big><em>t</em>, <em>FWHM</em>, <em>t0</em>, <em>P0</em>, <em>C</em><big>)</big><a class="headerlink" href="#PyOFTK.sechPulse" title="Permalink to this definition">¶</a></dt>
+<dd>This function computes a hyperbolic secant pulse with the
+specified parameters:</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.parabolicPulse">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">parabolicPulse</tt><big>(</big><em>t</em>, <em>P0</em><big>)</big><a class="headerlink" href="#PyOFTK.parabolicPulse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Geneate a parabolic envelope pulse</p>
+<blockquote>
+<ul class="simple">
+<li>t:            vector of times at which to compute u</li>
+<li>P0:           peak intensity of the pulse &#64; t=t0 (default = 1)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.parabolicPulseFit">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">parabolicPulseFit</tt><big>(</big><em>t</em>, <em>FWHM</em>, <em>T0</em>, <em>P0</em><big>)</big><a class="headerlink" href="#PyOFTK.parabolicPulseFit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a parabolic fit on a pulse-like curve</p>
+<blockquote>
+<ul class="simple">
+<li>t:            vector of times at which to compute u</li>
+<li>P0:           peak intensity of the pulse &#64; t=t0 (default = 1)</li>
+<li>t0:           center of pulse (default = 0)</li>
+<li>FWHM:         full-width at half-intensity of pulse (default = 1)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.sellmeier">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">sellmeier</tt><big>(</big><em>concGe</em>, <em>wavelenght</em><big>)</big><a class="headerlink" href="#PyOFTK.sellmeier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple function for the computing of the sellmeier coefficient of a ge-doped glass</p>
+<p>wavelenght : Wavelenght vector in microns (the coeff. are computed at this wavelenght)
+concGe : Germanium concentration of the glass</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.ossm">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">ossm</tt><big>(</big><em>up</em>, <em>length</em>, <em>nt</em>, <em>alpha</em>, <em>beta1</em>, <em>kappa</em>, <em>detuning</em>, <em>gamma</em>, <em>stepArchive=1</em>, <em>dz_over_dt=1.0</em>, <em>posDectector=0</em><big>)</big><a class="headerlink" href="#PyOFTK.ossm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation de l&#8217;algorithme Split-Step pour resoudre les 
+equations nonlin. couplees d&#8217;une reseau de bragg.
+(version nonsymmetrized)</p>
+<p>ref. Toroker et al. &#8216;Optimized split-step method for modeling
+nonlinear pulse propagation in nonlinear fiber Bragg gratings&#8217;</p>
+<p>up:             Profil spatial de l&#8217;impulsion
+length:         Longueur du fbg
+nt:                     Nombre de steps temporel
+alpha:          Parametre de gain
+beta1:          Constante de propagation (1/vitesse de groupe)
+kappa:          Parametre de couplage du fbg [1/m]
+detuning:       Detuning par rapport a la longueur d&#8217;onde de bragg [1/m]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.ossfm">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">ossfm</tt><big>(</big><em>up</em>, <em>length</em>, <em>nt</em>, <em>alpha</em>, <em>beta1</em>, <em>kappa</em>, <em>detuning</em>, <em>gamma</em>, <em>stepArchive=1</em>, <em>dz_over_dt=1.0</em>, <em>posDectector=0</em><big>)</big><a class="headerlink" href="#PyOFTK.ossfm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation de l&#8217;algorithme Split-Step pour resoudre les 
+equations nonlin. couplees d&#8217;une reseau de bragg.
+(version nonsymmetrized)</p>
+<p>ref. Toroker et al. &#8216;Optimized split-step method for modeling
+nonlinear pulse propagation in nonlinear fiber Bragg gratings&#8217;</p>
+<p>up:             Profil spatial de l&#8217;impulsion
+length:         Longueur du fbg
+nt:                     Nombre de steps temporel
+alpha:          Parametre de gain
+beta1:          Constante de propagation (1/vitesse de groupe)
+kappa:          Parametre de couplage du fbg [1/m]
+detuning:       Detuning par rapport a la longueur d&#8217;onde de bragg [1/m]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.ossmgpu2">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">ossmgpu2</tt><big>(</big><em>up</em>, <em>length</em>, <em>nt</em>, <em>alpha</em>, <em>beta1</em>, <em>kappa</em>, <em>detuning</em>, <em>gamma</em>, <em>stepArchive=1</em>, <em>dz_over_dt=1.0</em>, <em>posDectector=0</em><big>)</big><a class="headerlink" href="#PyOFTK.ossmgpu2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation de l&#8217;algorithme Split-Step pour resoudre les 
+equations nonlin. couplees d&#8217;une reseau de bragg.
+(version nonsymmetrized)</p>
+<p>ref. Toroker et al. &#8216;Optimized split-step method for modeling
+nonlinear pulse propagation in nonlinear fiber Bragg gratings&#8217;</p>
+<blockquote>
+&#8211; Version CUDA &#8211; 
+&#8211; Version Shared Memory Basic &#8211;</blockquote>
+<p>up:             Profil spatial de l&#8217;impulsion
+length:         Longueur du fbg
+nt:                     Nombre de steps temporel
+alpha:          Parametre de gain
+beta1:          Constante de propagation (1/vitesse de groupe)
+kappa:          Parametre de couplage du fbg [1/m]
+detuning:       Detuning par rapport a la longueur d&#8217;onde de bragg [1/m]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.ossmMovie">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">ossmMovie</tt><big>(</big><em>dataMatrix1</em>, <em>dataMatrix2</em>, <em>z</em>, <em>kappa</em>, <em>showFrame=0</em>, <em>scaleAuto=0</em><big>)</big><a class="headerlink" href="#PyOFTK.ossmMovie" title="Permalink to this definition">¶</a></dt>
+<dd>Version modifiee de la fonction movie pour afficher
+les resultats de ossmo</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.ssf">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">ssf</tt><big>(</big><em>u0</em>, <em>dt</em>, <em>dz</em>, <em>nz</em>, <em>alpha</em>, <em>betap</em>, <em>gamma</em>, <em>maxiter=4</em>, <em>tol=1.0000000000000001e-05</em><big>)</big><a class="headerlink" href="#PyOFTK.ssf" title="Permalink to this definition">¶</a></dt>
+<dd>Very simple implementation of the symmetrized split-step fourier algo.
+Solve the NLS equation with the SPM nonlinear terme only.
+error: third in step size
+u0 : Input field</dd></dl>
+
+<dl class="function">
+<dt id="PyOFTK.ssfu">
+<tt class="descclassname">PyOFTK.</tt><tt class="descname">ssfu</tt><big>(</big><em>up</em>, <em>dt</em>, <em>dz</em>, <em>nz</em>, <em>alpha</em>, <em>betap</em>, <em>gamma</em>, <em>maxiter=4</em>, <em>tol=1.0000000000000001e-05</em><big>)</big><a class="headerlink" href="#PyOFTK.ssfu" title="Permalink to this definition">¶</a></dt>
+<dd>Very simple implementation of the unsymmetrized split-step fourier algo.
+error: second in step size
+u0 : Input field</dd></dl>
+
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="PyOFTK.eFieldSVEA">
+<em class="property">
+class </em><tt class="descclassname">PyOFTK.</tt><tt class="descname">eFieldSVEA</tt><big>(</big><em>T</em>, <em>nt</em>, <em>zlength</em>, <em>nz</em>, <em>lambdaZero</em><big>)</big><a class="headerlink" href="#PyOFTK.eFieldSVEA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing the SVEA envellope of the field</p>
+<dl class="method">
+<dt id="PyOFTK.eFieldSVEA.pulsePlot">
+<tt class="descname">pulsePlot</tt><big>(</big><big>)</big><a class="headerlink" href="#PyOFTK.eFieldSVEA.pulsePlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PyOFTK.FibreStepIndex">
+<em class="property">
+class </em><tt class="descclassname">PyOFTK.</tt><tt class="descname">FibreStepIndex</tt><big>(</big><em>fibreCoeur</em>, <em>fibreClad</em>, <em>coeurConcGe</em>, <em>cladConcGe</em>, <em>longueur</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing a simple step index fiber</p>
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.NA">
+<tt class="descname">NA</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.NA" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.beta">
+<tt class="descname">beta</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.beta" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta [1/m]
+eq. (3.14), Fondamentals of Optical Fiber, John. A. Buck</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.beta1">
+<tt class="descname">beta1</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.beta1" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta1 [s/m]
+diff(beta)</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.beta2">
+<tt class="descname">beta2</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.beta2" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta2 [s2/m]
+diffdiff(beta)</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.beta2v">
+<tt class="descname">beta2v</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.beta2v" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.betaApprox">
+<tt class="descname">betaApprox</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.betaApprox" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.coeurSurface">
+<tt class="descname">coeurSurface</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.coeurSurface" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.deltaIndex">
+<tt class="descname">deltaIndex</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.deltaIndex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.effIndex">
+<tt class="descname">effIndex</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.effIndex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.lpSolve">
+<tt class="descname">lpSolve</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>stop_crit</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.lpSolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the caracteristic equation with fminbound scipy function
+return the eigenvalues u with an error stop_crit
+eq. (3.45), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>stop_crit:    error (stop criteria)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.lpSolve2">
+<tt class="descname">lpSolve2</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>stop_crit</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.lpSolve2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the caracteristic equation with a simple 3 pts method
+return the eigenvalues u with an error stop_crit
+eq. (3.45), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>stop_crit:    error (stop criteria)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.lpleft">
+<tt class="descname">lpleft</tt><big>(</big><em>u_lpleft</em>, <em>l_lpleft</em>, <em>V_lpleft</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.lpleft" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.modeArea">
+<tt class="descname">modeArea</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.modeArea" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.modeOverlap">
+<tt class="descname">modeOverlap</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.modeOverlap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.nlGamma">
+<tt class="descname">nlGamma</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.nlGamma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.plotLPMode">
+<tt class="descname">plotLPMode</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>nbrPoints</em>, <em>showCore=0</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.plotLPMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the Intensity profile of any lp modes
+eq. (3.74)-(3.75), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>nbrPoints:  Plot the mode with a nbrPoints x nbrPoints matrix</li>
+<li>showCore:     if == 1 Show the core of the fiber</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.printLPModes">
+<tt class="descname">printLPModes</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.printLPModes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.totalDispersion">
+<tt class="descname">totalDispersion</tt><big>(</big><em>wavelength_start</em>, <em>wavelength_end</em>, <em>nbrPoints</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.totalDispersion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.vNumber">
+<tt class="descname">vNumber</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.vNumber" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreStepIndex.width">
+<tt class="descname">width</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreStepIndex.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PyOFTK.FibreYb">
+<em class="property">
+class </em><tt class="descclassname">PyOFTK.</tt><tt class="descname">FibreYb</tt><big>(</big><em>fibreCoeur</em>, <em>fibreClad</em>, <em>coeurConcGe</em>, <em>cladConcGe</em>, <em>longueur</em>, <em>N</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing a Ytterbium-doped step index fiber
+Inherihit from FibreStepIndex class</p>
+<dl class="method">
+<dt id="PyOFTK.FibreYb.NA">
+<tt class="descname">NA</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.NA" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.aCS">
+<tt class="descname">aCS</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.aCS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.alpha">
+<tt class="descname">alpha</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.alpha" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.beta">
+<tt class="descname">beta</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.beta" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta [1/m]
+eq. (3.14), Fondamentals of Optical Fiber, John. A. Buck</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.beta1">
+<tt class="descname">beta1</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.beta1" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta1 [s/m]
+diff(beta)</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.beta2">
+<tt class="descname">beta2</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.beta2" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta2 [s2/m]
+diffdiff(beta)</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.beta2v">
+<tt class="descname">beta2v</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.beta2v" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.betaApprox">
+<tt class="descname">betaApprox</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.betaApprox" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.coeurSurface">
+<tt class="descname">coeurSurface</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.coeurSurface" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.deltaIndex">
+<tt class="descname">deltaIndex</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.deltaIndex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.eCS">
+<tt class="descname">eCS</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.eCS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.effIndex">
+<tt class="descname">effIndex</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.effIndex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.lpSolve">
+<tt class="descname">lpSolve</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>stop_crit</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.lpSolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the caracteristic equation with fminbound scipy function
+return the eigenvalues u with an error stop_crit
+eq. (3.45), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>stop_crit:    error (stop criteria)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.lpSolve2">
+<tt class="descname">lpSolve2</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>stop_crit</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.lpSolve2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the caracteristic equation with a simple 3 pts method
+return the eigenvalues u with an error stop_crit
+eq. (3.45), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>stop_crit:    error (stop criteria)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.lpleft">
+<tt class="descname">lpleft</tt><big>(</big><em>u_lpleft</em>, <em>l_lpleft</em>, <em>V_lpleft</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.lpleft" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.modeArea">
+<tt class="descname">modeArea</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.modeArea" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.modeOverlap">
+<tt class="descname">modeOverlap</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.modeOverlap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.nlGamma">
+<tt class="descname">nlGamma</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.nlGamma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.plotLPMode">
+<tt class="descname">plotLPMode</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>nbrPoints</em>, <em>showCore=0</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.plotLPMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the Intensity profile of any lp modes
+eq. (3.74)-(3.75), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>nbrPoints:  Plot the mode with a nbrPoints x nbrPoints matrix</li>
+<li>showCore:     if == 1 Show the core of the fiber</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.printLPModes">
+<tt class="descname">printLPModes</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.printLPModes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.totalDispersion">
+<tt class="descname">totalDispersion</tt><big>(</big><em>wavelength_start</em>, <em>wavelength_end</em>, <em>nbrPoints</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.totalDispersion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.vNumber">
+<tt class="descname">vNumber</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.vNumber" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreYb.width">
+<tt class="descname">width</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreYb.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PyOFTK.FibreEr">
+<em class="property">
+class </em><tt class="descclassname">PyOFTK.</tt><tt class="descname">FibreEr</tt><big>(</big><em>fibreCoeur</em>, <em>fibreClad</em>, <em>coeurConcGe</em>, <em>cladConcGe</em>, <em>longueur</em>, <em>N</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing a Erbium-doped step index fiber
+Inherihit from FibreStepIndex class</p>
+<dl class="method">
+<dt id="PyOFTK.FibreEr.NA">
+<tt class="descname">NA</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.NA" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.beta">
+<tt class="descname">beta</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.beta" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta [1/m]
+eq. (3.14), Fondamentals of Optical Fiber, John. A. Buck</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.beta1">
+<tt class="descname">beta1</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.beta1" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta1 [s/m]
+diff(beta)</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.beta2">
+<tt class="descname">beta2</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.beta2" title="Permalink to this definition">¶</a></dt>
+<dd>Compute Beta2 [s2/m]
+diffdiff(beta)</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.beta2v">
+<tt class="descname">beta2v</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.beta2v" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.betaApprox">
+<tt class="descname">betaApprox</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.betaApprox" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.coeurSurface">
+<tt class="descname">coeurSurface</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.coeurSurface" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.deltaIndex">
+<tt class="descname">deltaIndex</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.deltaIndex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.effIndex">
+<tt class="descname">effIndex</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.effIndex" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.lpSolve">
+<tt class="descname">lpSolve</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>stop_crit</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.lpSolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the caracteristic equation with fminbound scipy function
+return the eigenvalues u with an error stop_crit
+eq. (3.45), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>stop_crit:    error (stop criteria)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.lpSolve2">
+<tt class="descname">lpSolve2</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>stop_crit</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.lpSolve2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the caracteristic equation with a simple 3 pts method
+return the eigenvalues u with an error stop_crit
+eq. (3.45), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>stop_crit:    error (stop criteria)</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.lpleft">
+<tt class="descname">lpleft</tt><big>(</big><em>u_lpleft</em>, <em>l_lpleft</em>, <em>V_lpleft</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.lpleft" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.modeArea">
+<tt class="descname">modeArea</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.modeArea" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.modeOverlap">
+<tt class="descname">modeOverlap</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.modeOverlap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.nlGamma">
+<tt class="descname">nlGamma</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.nlGamma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.plotLPMode">
+<tt class="descname">plotLPMode</tt><big>(</big><em>l</em>, <em>m</em>, <em>wavelength</em>, <em>nbrPoints</em>, <em>showCore=0</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.plotLPMode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the Intensity profile of any lp modes
+eq. (3.74)-(3.75), Fondamentals of Optical Fiber, John. A. Buck</p>
+<blockquote>
+<ul class="simple">
+<li>l :           l parameter of the LP mode</li>
+<li>m :           m parameter of the LP mode</li>
+<li>nbrPoints:  Plot the mode with a nbrPoints x nbrPoints matrix</li>
+<li>showCore:     if == 1 Show the core of the fiber</li>
+</ul>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.printLPModes">
+<tt class="descname">printLPModes</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.printLPModes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.totalDispersion">
+<tt class="descname">totalDispersion</tt><big>(</big><em>wavelength_start</em>, <em>wavelength_end</em>, <em>nbrPoints</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.totalDispersion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.vNumber">
+<tt class="descname">vNumber</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.vNumber" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.FibreEr.width">
+<tt class="descname">width</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.FibreEr.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PyOFTK.fbg">
+<em class="property">
+class </em><tt class="descclassname">PyOFTK.</tt><tt class="descname">fbg</tt><big>(</big><em>fibreCoeur</em>, <em>fibreClad</em>, <em>coeurConcGe</em>, <em>cladConcGe</em>, <em>L</em>, <em>fbgDelta</em>, <em>fbgLambda</em><big>)</big><a class="headerlink" href="#PyOFTK.fbg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing a fiber bragg grating in a step index fiber
+Inherihit from FibreStepIndex class</p>
+<dl class="method">
+<dt id="PyOFTK.fbg.detuning">
+<tt class="descname">detuning</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.fbg.detuning" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.fbg.kappa">
+<tt class="descname">kappa</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.fbg.kappa" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PyOFTK.simpleFBG">
+<em class="property">
+class </em><tt class="descclassname">PyOFTK.</tt><tt class="descname">simpleFBG</tt><big>(</big><em>fibreCoeur</em>, <em>fibreClad</em>, <em>coeurConcGe</em>, <em>cladConcGe</em>, <em>L</em>, <em>fbgDelta</em>, <em>fbgLambda</em><big>)</big><a class="headerlink" href="#PyOFTK.simpleFBG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing a uniform fiber bragg grating in a step index fiber
+Inherihit from FibreStepIndex class</p>
+<dl class="method">
+<dt id="PyOFTK.simpleFBG.detuning">
+<tt class="descname">detuning</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.simpleFBG.detuning" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.simpleFBG.gBeta2">
+<tt class="descname">gBeta2</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.simpleFBG.gBeta2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.simpleFBG.gBeta3">
+<tt class="descname">gBeta3</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.simpleFBG.gBeta3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.simpleFBG.kappa">
+<tt class="descname">kappa</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.simpleFBG.kappa" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PyOFTK.apodizedFBG">
+<em class="property">
+class </em><tt class="descclassname">PyOFTK.</tt><tt class="descname">apodizedFBG</tt><big>(</big><em>fibreCoeur</em>, <em>fibreClad</em>, <em>coeurConcGe</em>, <em>cladConcGe</em>, <em>L</em>, <em>fbgDelta</em>, <em>fbgLambda</em><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing a apodized fiber bragg grating in a step index fiber
+Inherihit from FibreStepIndex class</p>
+<dl class="method">
+<dt id="PyOFTK.apodizedFBG.detuning">
+<tt class="descname">detuning</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG.detuning" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.apodizedFBG.gBeta2">
+<tt class="descname">gBeta2</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG.gBeta2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.apodizedFBG.gBeta3">
+<tt class="descname">gBeta3</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG.gBeta3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.apodizedFBG.kappa">
+<tt class="descname">kappa</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG.kappa" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.apodizedFBG.maxReflectivity">
+<tt class="descname">maxReflectivity</tt><big>(</big><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG.maxReflectivity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.apodizedFBG.q">
+<tt class="descname">q</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG.q" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PyOFTK.apodizedFBG.reflectivity">
+<tt class="descname">reflectivity</tt><big>(</big><em>wavelength</em><big>)</big><a class="headerlink" href="#PyOFTK.apodizedFBG.reflectivity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference" href="">Complete reference</a><ul>
+<li><a class="reference" href="#function">Function</a></li>
+<li><a class="reference" href="#class">Class</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="tutorial.html"
+                                  title="previous chapter">Tutorial</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/reference.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">PyOFTK v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Martin Laprise.
+      Last updated on Aug 04, 2009.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

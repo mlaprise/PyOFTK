@@ -45,7 +45,6 @@ class Amplifier():
 		* pumpPower: List of pump power [pw1 forward, pw1 backward, pw2 forward ...]
 		* signalWL: List of signal wavelength [wl1 forward, wl1 backward, wl2 forward ...]
 		* signalPower: List of signal power [pw1 forward, pw1 backward, pw2 forward ...]
-		* alpha: Background lost [not implemented yet...]
 		* nbrSections: Number of longitudinal section
 		* aseRes: Resolution of the ASE spectrum
 	'''
@@ -287,17 +286,10 @@ class Amplifier():
 
 			for v in arange(self.nbrAse):
 				P[i] = -sign(direction)*(sigma_em_ase[v]*N2 - sigma_abs_ase[v]*N1 - alpha_ase) * P_ase_b[v] * Fiber.modeOverlap(aseWL[v])
+				P[i] += -sign(direction)*2*(h*c/(aseWL[v]*1E-6)) * delta_nu[v] * sigma_em_ase[v]*N2 * Fiber.modeOverlap(aseWL[v])
 				i += 1
 
 			return P
-
-
-		def chi2(array1, array2):
-			'''
-			Evaluate the error between two arrays with the chi2
-			'''
-			nbrPoints = shape(array1)[0]
-			return sqrt( pow((array2-array1),2).sum() ) / nbrPoints
 
 
 		arguments = (self.sigma_abs_p, self.sigma_em_s, self.sigma_abs_s,

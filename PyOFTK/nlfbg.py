@@ -872,6 +872,254 @@ def ossmgpu2(up, length, nt, alpha, beta1, kappa, detuning, gamma, stepArchive =
 	return [up_final, um_final, upArchiveInt, umArchiveInt, timeDetector]
 
 
+def ossmgpu2b(up, length, nt, alpha, beta1, kappa, detuning, gamma, stepArchive = 1, dz_over_dt = 1.0, posDectector = 0):
+	'''	
+	Implementation of the optimized split-step method for solving nonlinear 
+	coupled-mode equations that model wave propagation in nonlinear fiber Bragg
+	gratings. (version nonsymmetrized)
+
+	ref. Toroker et al. 'Optimized split-step method for modeling
+	nonlinear pulse propagation in nonlinear fiber Bragg gratings'
+
+	 -- Version CUDA in-place -- 
+
+	up: 		Profil spatial de l'impulsion
+	length:		Longueur du fbg
+	nt:			Nombre de steps temporel
+	alpha:		Parametre de gain
+	beta1:		Constante de propagation (1/vitesse de groupe)
+	kappa:		Parametre de couplage du fbg [1/m]
+	detuning:	Detuning par rapport a la longueur d'onde de bragg [1/m]
+	'''
+
+	import pycuda.driver as cuda
+	import pycuda.compiler as cudaComp
+
+
+	# Vitesse de groupe dans le fibre sans fbg [m/ps]
+	Vg = (1.0/beta1)/(1e12)
+	nz = len(up)
+	dz = length / nz
+	k = wspace(dz*nz,nz)
+
+	# Cas simple ou dt est fixee a dz par la vitesse de groupe [ps]
+	dt = dz / Vg
+	h = dz
+
+	# On suppose que u_moins = 0 a z = L
+	um = zeros(nz, complex)
+	upArchiveInt = zeros([nt/stepArchive,nz], double)
+	umArchiveInt = zeros([nt/stepArchive,nz], double)
+	upArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	umArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	up_im_ArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	um_im_ArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	timeDetector = zeros(nt, complex)
+
+	# Matrice qui va contenir le stuff a envoyer au gpu
+	operatorArray = zeros([6,nz], float32)
+	operatorArray_im = zeros([6,nz], float32)
+
+	# Construction de l'operateur lineaire
+	Dmg = exp(h*(-alpha/2.0))
+	Dm1 = (cos(detuning*h)+1.0j*sin(detuning*h))*cos(kappa*h)
+	Dm2 = (cos(detuning*h)+1.0j*sin(detuning*h))*1.0j*sin(kappa*h)
+	Dp1 = (cos(detuning*h)+1.0j*sin(detuning*h))*1.0j*sin(kappa*h)
+	Dp2 = (cos(detuning*h)+1.0j*sin(detuning*h))*cos(kappa*h)
+
+	# Transfert des operateurs et parametres
+	operatorArray[1] = Dm1.real.astype(float32)
+	operatorArray_im[1] = Dm1.imag.astype(float32)
+	operatorArray[2] = Dm2.real.astype(float32)
+	operatorArray_im[2] = Dm2.imag.astype(float32)
+	operatorArray[3] = Dp1.real.astype(float32)
+	operatorArray_im[3] = Dp1.imag.astype(float32)
+	operatorArray[4] = Dp2.real.astype(float32)
+	operatorArray_im[4] = Dp2.imag.astype(float32)
+	operatorArray[5] = exp(h*(-alpha/2.0))
+
+	paramatersInt = zeros(1, int)
+	
+	archiveFlag = stepArchive
+	ia = 0
+
+	##########################################
+	### Initialisation of the PyCUDA Stuff ###
+	##########################################
+
+	import pycuda.autoinit
+	dimBlock = (256,1,1)
+	dimGrid	= (nz/dimBlock[0],1)
+
+	# Convert to float32
+	up_float32 = up.real.astype(float32)
+	up_float32_im = up.imag.astype(float32)
+	um_float32 = um.real.astype(float32)
+	um_float32_im = um.imag.astype(float32)
+
+	# Allocation and copy to the gpu memory
+	opArray_gpu = cuda.mem_alloc(operatorArray.size*operatorArray.dtype.itemsize)
+	cuda.memcpy_htod(opArray_gpu, operatorArray)
+	opArray_im_gpu = cuda.mem_alloc(operatorArray_im.size*operatorArray_im.dtype.itemsize)
+	cuda.memcpy_htod(opArray_im_gpu, operatorArray_im)
+
+	up_gpu = cuda.mem_alloc(up_float32.size*up_float32.dtype.itemsize)
+	cuda.memcpy_htod(up_gpu, up_float32)
+	up_im_gpu = cuda.mem_alloc(up_float32_im.size*up_float32_im.dtype.itemsize)
+	cuda.memcpy_htod(up_im_gpu, up_float32_im)
+
+	um_gpu = cuda.mem_alloc(um_float32.size*um_float32.dtype.itemsize)
+	cuda.memcpy_htod(um_gpu, um_float32)
+	um_im_gpu = cuda.mem_alloc(um_float32_im.size*um_float32_im.dtype.itemsize)
+	cuda.memcpy_htod(um_im_gpu, um_float32_im)
+
+
+	######### Optimized SplitStep Method Kernel	#########
+	#####################################################
+
+	MATRIX_SIZE = nz
+	TILE_SIZE = dimBlock[0]
+	BLOCK_SIZE = TILE_SIZE
+
+	kernel_code_template = """
+
+	  __global__ void splitstep(float *up_re, float *up_im, float *um_re, float *um_im, float *opArray_re, float *opArray_im)
+	  {
+
+		float up_next_im;
+		float up_next_re;
+		float um_next_im;
+		float um_next_re;
+
+		const uint idx = threadIdx.x + (blockIdx.x * blockDim.x);
+
+		// Load stuff into the share memory
+		// up_re = u[0], up_im = u[1], um_re = u[2], um_im = u[3]
+		// up_re[idx-1] = up[0][0], up_re[idx] = up[0][1], up_re[idx+1] = up[0][2] , etc...
+		float u[4][3];
+
+		// Device memory to the shared memory
+		if(idx <= 0)
+		{
+			u[0][0] = 0.0;
+			u[1][0] = 0.0;
+			u[2][0] = 0.0;
+			u[3][0] = 0.0;
+		}
+		else
+		{
+			u[0][0] =  up_re[idx-1];
+			u[1][0] =  up_im[idx-1];
+			u[2][0] =  um_re[idx-1];
+			u[3][0] =  um_im[idx-1];
+		}
+
+		if(idx >= (%(NZ)s-1))
+		{
+			u[0][2] = 0.0;
+			u[1][2] = 0.0;
+			u[2][2] = 0.0;
+			u[3][2] = 0.0;
+		}
+		else
+		{
+			u[0][2] = up_re[idx+1];
+			u[1][2] = up_im[idx+1];
+			u[2][2] = um_re[idx+1];
+			u[3][2] = um_im[idx+1];
+		}
+
+		u[0][1] =  up_re[idx];
+		u[1][1] =  up_im[idx];
+		u[2][1] =  um_re[idx];
+		u[3][1] =  um_im[idx];
+
+		__syncthreads();
+		
+		// Construction and application of the nonlinear operator
+		// Use the __fmul_rn() to avoid the combination into a FMAD by the compiler
+		const float Nm_im = __fmul_rn(%(GAMMA)s,(powf(u[2][2],2.0)+powf(u[3][2],2.0) + __fmul_rn(2.0,(powf(u[0][2],2.0)+powf(u[1][2],2.0)))));
+		const float Np_im = __fmul_rn(%(GAMMA)s,(powf(u[0][0],2.0)+powf(u[1][0],2.0) + __fmul_rn(2.0,(powf(u[2][0],2.0)+powf(u[3][0],2.0)))));
+		const float um_nl_im = __fmul_rn(cosf(%(H)s*Nm_im),u[3][2]) + __fmul_rn(sinf(%(H)s*Nm_im),u[2][2]);
+		const float um_nl_re = __fmul_rn(cosf(%(H)s*Nm_im),u[2][2]) - __fmul_rn(sinf(%(H)s*Nm_im),u[3][2]);
+		const float up_nl_im = __fmul_rn(cosf(%(H)s*Np_im),u[1][0]) + __fmul_rn(sinf(%(H)s*Np_im),u[0][0]);
+		const float up_nl_re = __fmul_rn(cosf(%(H)s*Np_im),u[0][0]) - __fmul_rn(sinf(%(H)s*Np_im),u[1][0]);
+
+				
+		// Application of the linear operator - Version global
+		um_next_re = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+1*%(NZ)s],um_nl_re) - __fmul_rn(opArray_im[idx+1*%(NZ)s],um_nl_im)));
+		um_next_re += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+2*%(NZ)s],up_nl_re) - __fmul_rn(opArray_im[idx+2*%(NZ)s],up_nl_im)));
+		um_next_im = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+1*%(NZ)s],um_nl_im) + __fmul_rn(opArray_im[idx+1*%(NZ)s],um_nl_re)));
+		um_next_im += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+2*%(NZ)s],up_nl_im) + __fmul_rn(opArray_im[idx+2*%(NZ)s],up_nl_re)));
+		up_next_re = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+3*%(NZ)s],um_nl_re) - __fmul_rn(opArray_im[idx+3*%(NZ)s],um_nl_im)));
+		up_next_re += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+4*%(NZ)s],up_nl_re) - __fmul_rn(opArray_im[idx+4*%(NZ)s],up_nl_im)));
+		up_next_im = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+3*%(NZ)s],um_nl_im) + __fmul_rn(opArray_im[idx+3*%(NZ)s],um_nl_re)));
+		up_next_im += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+4*%(NZ)s],up_nl_im) + __fmul_rn(opArray_im[idx+4*%(NZ)s],up_nl_re)));
+		
+		__syncthreads();
+
+		up_re[idx] = up_next_re;
+		up_im[idx] = up_next_im;
+		um_re[idx] = um_next_re;
+		um_im[idx] = um_next_im;
+		
+	  }
+
+	"""
+
+	kernel_code = kernel_code_template % {'MATRIX_SIZE': MATRIX_SIZE,'BLOCK_SIZE': BLOCK_SIZE,'NZ': int(nz), 'GAMMA':float(gamma), 'H':float(h)}
+
+	# compile the kernel code
+	mod = cudaComp.SourceModule(kernel_code)
+
+	####### Optimized SplitStep Method Kernel end #######
+	#####################################################
+
+
+	func = mod.get_function("splitstep")
+	for i in arange(nt):
+
+			func(up_gpu, up_im_gpu, um_gpu, um_im_gpu, opArray_gpu, opArray_im_gpu, block=dimBlock, grid=dimGrid)
+		
+			# Archive le signal avec une periode stepArchive
+			if archiveFlag == stepArchive:
+				cuda.memcpy_dtoh(upArchiveInt32[ia], up_gpu)
+				cuda.memcpy_dtoh(umArchiveInt32[ia], um_gpu)
+				cuda.memcpy_dtoh(up_im_ArchiveInt32[ia], up_im_gpu)
+				cuda.memcpy_dtoh(um_im_ArchiveInt32[ia], um_im_gpu)
+				upArchiveInt[ia] = pow(upArchiveInt32[ia],2) + pow(up_im_ArchiveInt32[ia],2)
+				umArchiveInt[ia] = pow(umArchiveInt32[ia],2) + pow(um_im_ArchiveInt32[ia],2)
+				ia += 1
+				archiveFlag = 1
+			else:
+				archiveFlag += 1
+			
+
+ 	# Recopy the result from the gpu memory to the main memory
+	up_final32 = empty_like(up_float32)
+	um_final32 = empty_like(um_float32)
+	up_final32_im = empty_like(up_float32)
+	um_final32_im = empty_like(um_float32)
+	cuda.memcpy_dtoh(up_final32, up_gpu)
+	cuda.memcpy_dtoh(um_final32, um_gpu)
+	cuda.memcpy_dtoh(up_final32_im, up_im_gpu)
+	cuda.memcpy_dtoh(um_final32_im, um_im_gpu)
+
+
+	##########################################
+
+	# Convert to numpy complex type
+	um_final = zeros(nz, complex)
+	up_final = zeros(nz, complex)
+	um_final.real = um_final32
+	um_final.imag = um_final32_im
+	up_final.real = up_final32
+	up_final.imag = up_final32_im
+
+
+	return [up_final, um_final, upArchiveInt, umArchiveInt, timeDetector]
+
+
 def ossmgpu2Amp(up, length, nt, alpha, beta1, kappa, detuning, gamma, nbrArchive = 1, dz_over_dt = 1.0, posDectector = 0):
 	'''	
 	Implementation of the optimized split-step method for solving nonlinear 
@@ -1200,9 +1448,8 @@ def testgpu(u):
 
 	__global__ void testKernel(float *u, float *u_out)
 	{
-			const uint idx = threadIdx.x + (blockIdx.x * blockDim.x);
-		
-			u_out[idx] = u[idx]*u[idx];
+		const uint idx = threadIdx.x + (blockIdx.x * blockDim.x);
+		u_out[idx] = u[idx]*u[idx];
 	}
 
 	""")
@@ -1749,4 +1996,269 @@ def ossmSumMovie(dataMatrix1, dataMatrix2, z, kappa, showFrame = 0, scaleAuto = 
 			pl.title("Movie - Frame: " + str(i))
     		pl.draw()
 
+
+def ossmgpu2share(up, length, nt, alpha, beta1, kappa, detuning, gamma, stepArchive = 1, dz_over_dt = 1.0, posDectector = 0):
+	'''	
+	Implementation of the optimized split-step method for solving nonlinear 
+	coupled-mode equations that model wave propagation in nonlinear fiber Bragg
+	gratings. (version nonsymmetrized)
+
+	ref. Toroker et al. 'Optimized split-step method for modeling
+	nonlinear pulse propagation in nonlinear fiber Bragg gratings'
+
+	 -- Version CUDA in-place -- 
+
+	up: 		Profil spatial de l'impulsion
+	length:		Longueur du fbg
+	nt:			Nombre de steps temporel
+	alpha:		Parametre de gain
+	beta1:		Constante de propagation (1/vitesse de groupe)
+	kappa:		Parametre de couplage du fbg [1/m]
+	detuning:	Detuning par rapport a la longueur d'onde de bragg [1/m]
+	'''
+
+
+	import pycuda.driver as cuda
+	import pycuda.compiler as cudaComp
+
+
+	# Vitesse de groupe dans le fibre sans fbg [m/ps]
+	Vg = (1.0/beta1)/(1e12)
+	nz = len(up)
+	dz = length / nz
+	k = wspace(dz*nz,nz)
+
+	# Cas simple ou dt est fixee a dz par la vitesse de groupe [ps]
+	dt = dz / Vg
+	h = dz
+
+	# On suppose que u_moins = 0 a z = L
+	um = zeros(nz, complex)
+	upArchiveInt = zeros([nt/stepArchive,nz], double)
+	umArchiveInt = zeros([nt/stepArchive,nz], double)
+	upArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	umArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	up_im_ArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	um_im_ArchiveInt32 = zeros([nt/stepArchive,nz], float32)
+	timeDetector = zeros(nt, complex)
+	timeDetector32 = zeros(nt, float32)
+	timeDetector32_im = zeros(nt, float32)
+
+	# Matrice qui va contenir le stuff a envoyer au gpu
+	operatorArray = zeros([6,nz], float32)
+	operatorArray_im = zeros([6,nz], float32)
+
+	# Construction de l'operateur lineaire
+	Dmg = exp(h*(-alpha/2.0))
+	Dm1 = (cos(detuning*h)+1.0j*sin(detuning*h))*cos(kappa*h)
+	Dm2 = (cos(detuning*h)+1.0j*sin(detuning*h))*1.0j*sin(kappa*h)
+	Dp1 = (cos(detuning*h)+1.0j*sin(detuning*h))*1.0j*sin(kappa*h)
+	Dp2 = (cos(detuning*h)+1.0j*sin(detuning*h))*cos(kappa*h)
+
+	# Transfert des operateurs et parametres
+	operatorArray[1] = Dm1.real.astype(float32)
+	operatorArray_im[1] = Dm1.imag.astype(float32)
+	operatorArray[2] = Dm2.real.astype(float32)
+	operatorArray_im[2] = Dm2.imag.astype(float32)
+	operatorArray[3] = Dp1.real.astype(float32)
+	operatorArray_im[3] = Dp1.imag.astype(float32)
+	operatorArray[4] = Dp2.real.astype(float32)
+	operatorArray_im[4] = Dp2.imag.astype(float32)
+	operatorArray[5] = exp(h*(-alpha/2.0))
+
+	paramatersInt = zeros(1, int)
+	
+	archiveFlag = stepArchive
+	ia = 0
+
+	##########################################
+	### Initialisation of the PyCUDA Stuff ###
+	##########################################
+
+	import pycuda.autoinit
+	dimBlock = (256,1,1)
+	dimGrid	= (nz/dimBlock[0],1)
+
+	# Convert to float32
+	up_float32 = up.real.astype(float32)
+	up_float32_im = up.imag.astype(float32)
+	um_float32 = um.real.astype(float32)
+	um_float32_im = um.imag.astype(float32)
+
+	# Allocation and copy to the gpu memory
+	opArray_gpu = cuda.mem_alloc(operatorArray.size*operatorArray.dtype.itemsize)
+	cuda.memcpy_htod(opArray_gpu, operatorArray)
+	opArray_im_gpu = cuda.mem_alloc(operatorArray_im.size*operatorArray_im.dtype.itemsize)
+	cuda.memcpy_htod(opArray_im_gpu, operatorArray_im)
+
+	timeDetector_gpu = cuda.mem_alloc(timeDetector32.size*timeDetector32.dtype.itemsize)
+	cuda.memcpy_htod(timeDetector_gpu, timeDetector32)
+	timeDetector_im_gpu = cuda.mem_alloc(timeDetector32_im.size*timeDetector32_im.dtype.itemsize)
+	cuda.memcpy_htod(timeDetector_im_gpu, timeDetector32_im)
+
+	up_gpu = cuda.mem_alloc(up_float32.size*up_float32.dtype.itemsize)
+	cuda.memcpy_htod(up_gpu, up_float32)
+	up_im_gpu = cuda.mem_alloc(up_float32_im.size*up_float32_im.dtype.itemsize)
+	cuda.memcpy_htod(up_im_gpu, up_float32_im)
+
+	um_gpu = cuda.mem_alloc(um_float32.size*um_float32.dtype.itemsize)
+	cuda.memcpy_htod(um_gpu, um_float32)
+	um_im_gpu = cuda.mem_alloc(um_float32_im.size*um_float32_im.dtype.itemsize)
+	cuda.memcpy_htod(um_im_gpu, um_float32_im)
+
+
+	######### Optimized SplitStep Method Kernel	#########
+	#####################################################
+
+	MATRIX_SIZE = nz
+	TILE_SIZE = dimBlock[0]
+	BLOCK_SIZE = TILE_SIZE
+
+	kernel_code_template = """
+
+	  __global__ void splitstep(float *up_re, float *up_im, float *um_re, float *um_im, float *opArray_re, float *opArray_im, float *timeDetector, float *timeDetector_im)
+	  {
+
+		float up_next_im;
+		float up_next_re;
+		float um_next_im;
+		float um_next_re;
+
+		//const uint idx = threadIdx.x + (blockIdx.x * blockDim.x);
+		const uint tx = threadIdx.x;
+		const uint bx = blockIdx.x;
+		const uint aBegin = %(BLOCK_SIZE)s * bx;
+		const uint aEnd = aBegin + %(BLOCK_SIZE)s;
+		const uint aStep = %(BLOCK_SIZE)s;
+
+		// Load stuff into the registers
+		// up_re = u[0], up_im = u[1], um_re = u[2], um_im = u[3]
+		// up_re[idx-1] = up[0][0], up_re[idx] = up[0][1], up_re[idx+1] = up[0][2] , etc...
+	
+		for (int a = aBegin; a <= aEnd; a += aStep) 
+		{
+			uint idx = a + tx;
+			__shared__ float Us[4][%(BLOCK_SIZE)s + 2];
+
+			Us[0][tx] = up_re[a + tx];
+			Us[1][tx] = up_im[a + tx];
+			Us[2][tx] = um_re[a + tx];
+			Us[3][tx] = um_im[a + tx];
+
+			__syncthreads();
+
+			float u[4][3];
+
+			// Device memory to the register
+			u[0][0] = Us[0][tx-1];
+			u[1][0] = Us[1][tx-1];
+			u[2][0] = Us[2][tx-1];
+			u[3][0] = Us[3][tx-1];
+
+			u[0][2] = Us[0][tx+1];
+			u[1][2] = Us[1][tx+1];
+			u[2][2] = Us[2][tx+1];
+			u[3][2] = Us[3][tx+1];
+
+			u[0][1] = Us[0][tx];
+			u[1][1] = Us[1][tx];
+			u[2][1] = Us[2][tx];
+			u[3][1] = Us[3][tx];
+
+			
+			// Construction and application of the nonlinear operator
+			// Use the __fmul_rn() to avoid the combination into a FMAD by the compiler
+			const float Nm_im = __fmul_rn(%(GAMMA)s,(powf(u[2][2],2.0)+powf(u[3][2],2.0) + __fmul_rn(2.0,(powf(u[0][2],2.0)+powf(u[1][2],2.0)))));
+			const float Np_im = __fmul_rn(%(GAMMA)s,(powf(u[0][0],2.0)+powf(u[1][0],2.0) + __fmul_rn(2.0,(powf(u[2][0],2.0)+powf(u[3][0],2.0)))));
+			const float um_nl_im = __fmul_rn(cosf(%(H)s*Nm_im),u[3][2]) + __fmul_rn(sinf(%(H)s*Nm_im),u[2][2]);
+			const float um_nl_re = __fmul_rn(cosf(%(H)s*Nm_im),u[2][2]) - __fmul_rn(sinf(%(H)s*Nm_im),u[3][2]);
+			const float up_nl_im = __fmul_rn(cosf(%(H)s*Np_im),u[1][0]) + __fmul_rn(sinf(%(H)s*Np_im),u[0][0]);
+			const float up_nl_re = __fmul_rn(cosf(%(H)s*Np_im),u[0][0]) - __fmul_rn(sinf(%(H)s*Np_im),u[1][0]);
+
+	
+			// Application of the linear operator - Version global
+			um_next_re = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+1*%(NZ)s],um_nl_re) - __fmul_rn(opArray_im[idx+1*%(NZ)s],um_nl_im)));
+			um_next_re += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+2*%(NZ)s],up_nl_re) - __fmul_rn(opArray_im[idx+2*%(NZ)s],up_nl_im)));
+			um_next_im = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+1*%(NZ)s],um_nl_im) + __fmul_rn(opArray_im[idx+1*%(NZ)s],um_nl_re)));
+			um_next_im += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+2*%(NZ)s],up_nl_im) + __fmul_rn(opArray_im[idx+2*%(NZ)s],up_nl_re)));
+			up_next_re = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+3*%(NZ)s],um_nl_re) - __fmul_rn(opArray_im[idx+3*%(NZ)s],um_nl_im)));
+			up_next_re += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+4*%(NZ)s],up_nl_re) - __fmul_rn(opArray_im[idx+4*%(NZ)s],up_nl_im)));
+			up_next_im = __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+3*%(NZ)s],um_nl_im) + __fmul_rn(opArray_im[idx+3*%(NZ)s],um_nl_re)));
+			up_next_im += __fmul_rn(opArray_re[idx+5*%(NZ)s],(__fmul_rn(opArray_re[idx+4*%(NZ)s],up_nl_im) + __fmul_rn(opArray_im[idx+4*%(NZ)s],up_nl_re)));
+
+			__syncthreads();
+
+			up_re[a + tx] = up_next_re;
+			up_im[a + tx] = up_next_im;
+			um_re[a + tx] = um_next_re;
+			um_im[a + tx] = um_next_im;
+			
+		}
+
+	
+	
+		
+	  }
+
+	"""
+
+	kernel_code = kernel_code_template % {'MATRIX_SIZE': MATRIX_SIZE,'BLOCK_SIZE': BLOCK_SIZE,'NZ':nz, 'GAMMA':gamma, 'H':h}
+
+	# compile the kernel code
+	mod = cudaComp.SourceModule(kernel_code)
+
+	####### Optimized SplitStep Method Kernel end #######
+	#####################################################
+
+
+	func = mod.get_function("splitstep")
+	for i in arange(nt):
+
+			"""
+			paramatersInt[0] = nt
+			paramatersInt_gpu = cuda.mem_alloc(paramatersInt.size*paramatersInt.dtype.itemsize)
+			cuda.memcpy_htod(paramatersInt_gpu, paramatersInt)
+			"""
+
+			func(up_gpu, up_im_gpu, um_gpu, um_im_gpu, opArray_gpu, opArray_im_gpu, timeDetector_gpu, timeDetector_im_gpu, block=dimBlock, grid=dimGrid)
+		
+			# Archive le signal avec une periode stepArchive
+			if archiveFlag == stepArchive:
+				cuda.memcpy_dtoh(upArchiveInt32[ia], up_gpu)
+				cuda.memcpy_dtoh(umArchiveInt32[ia], um_gpu)
+				cuda.memcpy_dtoh(up_im_ArchiveInt32[ia], up_im_gpu)
+				cuda.memcpy_dtoh(um_im_ArchiveInt32[ia], um_im_gpu)
+				upArchiveInt[ia] = pow(upArchiveInt32[ia],2) + pow(up_im_ArchiveInt32[ia],2)
+				umArchiveInt[ia] = pow(umArchiveInt32[ia],2) + pow(um_im_ArchiveInt32[ia],2)
+				ia += 1
+				archiveFlag = 1
+			else:
+				archiveFlag += 1
+			
+
+ 	# Recopy the result from the gpu memory to the main memory
+	up_final32 = empty_like(up_float32)
+	um_final32 = empty_like(um_float32)
+	up_final32_im = empty_like(up_float32)
+	um_final32_im = empty_like(um_float32)
+	cuda.memcpy_dtoh(up_final32, up_gpu)
+	cuda.memcpy_dtoh(um_final32, um_gpu)
+	cuda.memcpy_dtoh(up_final32_im, up_im_gpu)
+	cuda.memcpy_dtoh(um_final32_im, um_im_gpu)
+	cuda.memcpy_dtoh(timeDetector32 , timeDetector_gpu)
+	cuda.memcpy_dtoh(timeDetector32_im, timeDetector_im_gpu)
+
+	##########################################
+
+	# Convert to numpy complex type
+	um_final = zeros(nz, complex)
+	up_final = zeros(nz, complex)
+	um_final.real = um_final32
+	um_final.imag = um_final32_im
+	up_final.real = up_final32
+	up_final.imag = up_final32_im
+	timeDetector.real = timeDetector32
+	timeDetector.imag = timeDetector32_im
+
+	return [up_final, um_final, upArchiveInt, umArchiveInt, timeDetector]
 

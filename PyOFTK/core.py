@@ -306,6 +306,9 @@ class FibreStepIndex(OFTKDevice):
 		w = self.width(wavelength)
 		return 1 - exp(-pow((self.rayonCoeur/w),2.0))
 
+	def pumpOverlap(self, wavelength):
+		return self.modeOverlap(wavelength)
+
 	def coeurSurface(self, wavelength):
 		return pi*pow(self.rayonCoeur,2.0)
 
@@ -606,7 +609,6 @@ class YbDopedFiber(FibreStepIndex):
 		FibreStepIndex.__init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, description)
 		self.concDopant = N
 		self.tau = 0.850E-3
-		self.pumpOverlap = 0.8
 		self.wlMin = 0.850
 		self.wlMax = 1.100
 		csFile = load('cross_section_ytterbium.npz')
@@ -663,7 +665,7 @@ class YbDopedDCOF(YbDopedFiber):
 	def __repr__(self):
 		return "Yb-doped double-clad Step Index Fiber"
 
-	def doublecladOverlap(self, wavelength):
+	def pumpOverlap(self, wavelength):
 		return pow(self.rayonCoeur,2.0) / pow(self.rayonClad,2)
 
 
@@ -677,7 +679,6 @@ class ErDopedFiber(FibreStepIndex):
 		FibreStepIndex.__init__(self, fibreCoeur, fibreClad, coeurConcGe, cladConcGe, length, description)
 		self.concDopant = N
 		self.tau = 10E-3
-		self.pumpOverlap = 0.8
 		self.wlMin = 1.450
 		self.wlMax = 1.650
 		csFile = load('cross_section_erbium.npz')

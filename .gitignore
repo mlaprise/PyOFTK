@@ -1,0 +1,6 @@
+*.pyc
+*.o
+*.a
+*~
+fftw-wisdom.dat
+*.so

@@ -46,6 +46,14 @@ import pulse
 pi = 3.14159265358979323846264338327950288419716939937510582097494459
 
 
+def chi2(array1, array2):
+	'''
+	Evaluate the error between two arrays with the chi2
+	'''
+	nbrPoints = shape(array1)[0]
+	return sqrt( pow((array2-array1),2).sum() ) / nbrPoints
+
+
 def diffOrder4(y, x):
 	dx = x[1]-x[0]
 	nbrSamples = len(y)

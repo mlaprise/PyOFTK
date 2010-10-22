@@ -41,11 +41,16 @@ epsYb = (h*c)/(10000*100)
 class linearCavity():
 	'''
 	Class representing a generic linear Rare-Earth doped fiber laser
+		* fiber: Doped fiber
+		* pumpWL: List of pump wavelength [wl1 forward, wl1 backward, wl2 forward ...]
+		* pumpPower: List of pump power [pw1 forward, pw1 backward, pw2 forward ...]
+		* nbrSections: Number of longitudinal section
+		* aseRes: Resolution of the ASE spectrum
 	'''
 
-	def __init__(self, fiber, pumpWL, pumpPower, fbg1, fbg2, alpha = 0.0, nbrSections = 100, aseRes = 100):
+	def __init__(self, fiber, pumpWL, pumpPower, fbg1, fbg2, nbrSections = 100, aseRes = 100):
 
-		# Physical properties of the laser
+
 		self.dopedFiber = fiber
 	
 		if isinstance(fiber, YbDopedFiber or YbDopedDCOF) or (isinstance(fiber, ErDopedFiber) and pumpWL > 1.450):
@@ -54,10 +59,10 @@ class linearCavity():
 			self.pumpWL = 0.980
 			self.signalWL = pumpWL
 		elif isinstance(fiber, ErDopedFiber):
-			self.nbrSignal = len(pumpWL)
-			self.nbrPump = 0
-			self.pumpWL = 0.980
-			self.signalWL = pumpWL
+			self.nbrSignal = 0
+			self.nbrPump = len(pumpWL)
+			self.pumpWL = pumpWL
+			self.signalWL = 1.55
 		else:
 			raise TypeError
 
@@ -100,14 +105,13 @@ class linearCavity():
 		[self.sigma_em_s, self.sigma_abs_s] = fiber.crossSection(self.signalWL)
 		[self.sigma_em_ase, self.sigma_abs_ase] = fiber.crossSection(self.aseWL)
 
-		self.alpha_s = fiber.bgLoss(signalWL)
-		self.alpha_p = fiber.bgLoss(pumpWL)
+		self.alpha_s = fiber.bgLoss(self.signalWL)
+		self.alpha_p = fiber.bgLoss(self.pumpWL)
 		self.alpha_ase = fiber.bgLoss(self.aseWL)
 
 		self.nbrSections = nbrSections
 		self.z = linspace(0,fiber.length,nbrSections)
 		self.dz = self.dopedFiber.length / nbrSections
-
 
 		self.P_ase_f = zeros([self.nbrAse, nbrSections])
 		self.P_ase_b = zeros([self.nbrAse, nbrSections])
@@ -121,14 +125,17 @@ class linearCavity():
 		self.N1 = zeros(nbrSections)
 
 		# Initiale Conditions
-		#self.P_p_f[:,0] = pumpPower[0:self.nbrPump]
-		#self.P_p_b[:,-1] = pumpPower[self.nbrPump:2*self.nbrPump]
-		#self.P_s_f[:,0] = signalPower[0:self.nbrSignal]
-		#self.P_s_b[:,-1] = signalPower[self.nbrSignal:2*self.nbrSignal]
-		self.P_s_f[:,0] = pumpPower[0:self.nbrSignal]
-		self.P_s_b[:,-1] =  pumpPower[self.nbrSignal:2*self.nbrSignal]
 		self.P_ase_f[:,0] = 0.0
 		self.P_ase_b[:,-1] = 0.0
+
+		if isinstance(fiber, YbDopedFiber or YbDopedDCOF) or (isinstance(fiber, ErDopedFiber) and pumpWL > 1.450):
+			self.P_s_f[:,0] = pumpPower[0:self.nbrSignal]
+			self.P_s_b[:,-1] =  pumpPower[self.nbrSignal:2*self.nbrSignal]
+		elif isinstance(fiber, ErDopedFiber):
+			self.P_p_f[:,0] = pumpPower[0:self.nbrPump]
+			self.P_p_b[:,-1] = pumpPower[self.nbrPump:2*self.nbrPump]
+		else:
+			raise TypeError
 	
 		self.error = 1.0
 	
@@ -154,6 +161,17 @@ class linearCavity():
 		'''
 		return [self.P_p_f, self.P_p_b]
 
+	
+	def get_outputPower(self,units='linear'):
+	
+		integral = integrate.simps(self.output)
+		outputPower  = {
+		  'linear': lambda: integral,
+		  'dBm': lambda:10*log10(integral),
+		}[units]()
+
+		return outputPower
+
 
 	def get_signalPower(self):
 		'''
@@ -168,14 +186,18 @@ class linearCavity():
 		'''
 		return [self.P_ase_f, self.P_ase_b]
 
+
 	
-	def get_outputSpectrum(self):
+	def get_outputSpectrum(self, units='linear'):
 		'''
 		Integrate the ASE signal an return the spectrum in both direction
 		'''
-		ase_forward = integrate.simps(self.P_ase_f)
-		ase_backward = integrate.simps(self.P_ase_b)
-		return [ase_forward*(1-self.R2), ase_backward*(1-self.R1)]
+		[ase_f, ase_b]  = {
+		  'linear': lambda: [self.P_ase_f[:,-1]*(1-self.R2), self.P_ase_b[:,0]*(1-self.R1)],
+		  'dBm': lambda:[10*log10(self.P_ase_f[:,-1]*(1-self.R2)), 10*log10(self.P_ase_b[:,0]*(1-self.R1))],
+		}[units]()
+
+		return [ase_f, ase_b]
 
 
 	def set_init_signalPower(self, signalPower):
@@ -313,18 +335,18 @@ class linearCavity():
 
 			# Signal Power
 			for l in arange(self.nbrSignal):
-				P[i] = sign(direction)*(sigma_em_s[l]*N2 - sigma_abs_s[l]*N1 - alpha_s) * P_s_f[l] * Fiber.modeOverlap(sWL[l])
+				P[i] = sign(direction)*(sigma_em_s[l]*N2 - sigma_abs_s[l]*N1 - alpha_s) * P_s_f[l] * Fiber.pumpOverlap(sWL[l])
 				i += 1
 			for u in arange(self.nbrSignal):
-				P[i] = -sign(direction)*(sigma_em_s[u]*N2 - sigma_abs_s[u]*N1 - alpha_s) * P_s_b[u] * Fiber.modeOverlap(sWL[u])
+				P[i] = -sign(direction)*(sigma_em_s[u]*N2 - sigma_abs_s[u]*N1 - alpha_s) * P_s_b[u] * Fiber.pumpOverlap(sWL[u])
 				i += 1
 
 			# Pump Power
 			for m in arange(self.nbrPump):
-				P[i] = sign(direction)*(-sigma_abs_p[m]*N1 - alpha_p) * P_p_f[m] * Fiber.modeOverlap(pWL[m])
+				P[i] = sign(direction)*(-sigma_abs_p[m]*N1 - alpha_p) * P_p_f[m] * Fiber.pumpOverlap(pWL[m])
 				i += 1
 			for v in arange(self.nbrPump):
-				P[i] = -sign(direction)*(-sigma_abs_p[v]*N1 - alpha_p) * P_p_b[v] * Fiber.modeOverlap(pWL[v])
+				P[i] = -sign(direction)*(-sigma_abs_p[v]*N1 - alpha_p) * P_p_b[v] * Fiber.pumpOverlap(pWL[v])
 				i += 1
 
 			# ASE Power
@@ -359,11 +381,13 @@ class linearCavity():
 		self.P_ase_f = solution[:,2*self.nbrSignal+2*self.nbrPump:2*self.nbrSignal+2*self.nbrPump+self.nbrAse].T
 
 
+
 	def simulateBackward(self, direction=1):
 		'''
-		Simulate the power propagating in the backward direction by
-		solving each diff eq. individualy with a constant population distribution
-		'''
+		Propagate the signal in backward direction using the population
+		found in the previous forward iteration. Since N2 and N1 are constant
+		we can solve each equations with a simple integration
+		'''	
 
 		# Get the initiale conditions
 		Pp_ini = self.P_p_b[:,-1]
@@ -373,22 +397,23 @@ class linearCavity():
 		self.invSptProfil()
 
 		for m in arange(self.nbrPump):
-			if Pp_ini[m] > 0.0:
-				integrant = sign(direction)*(-self.sigma_abs_p[m]*self.N1[::-1] - self.alpha_p) * self.dopedFiber.modeOverlap(self.pumpWL[m])
-				self.P_p_b[m,::-1] = r_[Pp_ini[m],Pp_ini[m]*exp(integrate.cumtrapz(integrant, self.z))]
+			integrant = sign(direction)*(-self.sigma_abs_p[m]*self.N1[::-1] - self.alpha_p) * self.dopedFiber.pumpOverlap(self.pumpWL[m])
+			self.P_p_b[m,::-1] = r_[Pp_ini[m], Pp_ini[m]*exp(integrate.cumtrapz(integrant, self.z))]
 
 		for l in arange(self.nbrSignal):
-			if Ps_ini[l] > 0.0:
-				integrant = sign(direction)*(self.sigma_em_s[l]*self.N2[::-1] - self.sigma_abs_s[l]*self.N1[::-1] - self.alpha_s) * self.dopedFiber.modeOverlap(self.signalWL[l])
-				self.P_s_b[l,::-1] = r_[Ps_ini[l],Ps_ini[l]*exp(integrate.cumtrapz(integrant, self.z))]
+			integrant = sign(direction)*(self.sigma_em_s[l]*self.N2[::-1] - self.sigma_abs_s[l]*self.N1[::-1] - self.alpha_s)
+			integrant *= self.dopedFiber.pumpOverlap(self.signalWL[l])
+			self.P_s_b[l,::-1] = r_[Ps_ini[l], Ps_ini[l]*exp(integrate.cumtrapz(integrant, self.z))]
 
 		for v in arange(self.nbrAse):
-			integrant = sign(direction)*(self.sigma_em_ase[v]*self.N2[::-1] - self.sigma_abs_ase[v]*self.N1[::-1] - self.alpha_ase) * self.dopedFiber.modeOverlap(self.aseWL[v])
-			integrant2 = sign(direction)*2*(h*c/(self.aseWL[v]*1E-6)) * self.delta_nu[v] * self.sigma_em_ase[v]*self.N2[::-1] * self.dopedFiber.modeOverlap(self.aseWL[v])
+			integrant = sign(direction)*(self.sigma_em_ase[v]*self.N2[::-1] - self.sigma_abs_ase[v]*self.N1[::-1] - self.alpha_ase)
+			integrant *= self.dopedFiber.modeOverlap(self.aseWL[v])
+			integrant2 = sign(direction)*2*(h*c/(self.aseWL[v]*1E-6)) * self.delta_nu[v] * self.sigma_em_ase[v]*self.N2[::-1]
+			integrant2 *= self.dopedFiber.modeOverlap(self.aseWL[v])
 
 			sol = integrate.cumtrapz(integrant, self.z)
 			solTerme1 = exp(sol)
-			solTerme1b = r_[1.0,exp(-sol)]
+			solTerme1b = r_[1.0, exp(-sol)]
 			solTerme2 = solTerme1 * integrate.cumtrapz(integrant2*solTerme1b, self.z)
 			self.P_ase_b[v,::-1] = r_[Pase_ini[v], Pase_ini[v]*solTerme1 + solTerme2]
 
@@ -402,27 +427,34 @@ class linearCavity():
 		normVar = 1.0 + errorTol
 
 		if nbrItrMax < avgVar:
-			nbrItrMax = avgVar	
+			nbrItrMax = avgVar
 
 		outputError = zeros(nbrItrMax)
+
+		self.simulate()
 
 		for itr in arange(avgVar):
 			self.simulateBackward()
 			self.simulate()
-			outputError[i] = self.P_ase_f[self.peakR2,-1]*(1-self.R2[self.peakR2])
-			print [self.P_ase_f[:,-1].sum(),outputError[i]]
+			previousOutput = self.output
+			self.output = self.P_ase_f[:,-1]*(1-self.R2)
+			outputError[i] = chi2(previousOutput, self.output)
+			if verbose:
+				print outputError[i]
 			i += 1
 
 		while (i < nbrItrMax):
 			self.simulateBackward()
 			self.simulate()
-			outputError[i] = self.P_ase_f[self.peakR2,-1]*(1-self.R2[self.peakR2])
-			#normVar = stats.tvar(outputError[-avgVar:])/stats.tmean(outputError[-avgVar:])
-			print [self.P_ase_f[:,-1].sum(),outputError[i]]
+			previousOutput = self.output
+			self.output = self.P_ase_f[:,-1]*(1-self.R2)
+			outputError[i] = chi2(previousOutput, self.output)
+			if verbose:
+				print outputError[i]
 			i += 1
 
-		self.output = self.P_ase_f[:,-1]*(1-self.R2)
-		return outputError
+		if errorOutput:
+			return outputError
 
 
 
