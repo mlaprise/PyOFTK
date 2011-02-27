@@ -81,7 +81,7 @@ for i in range(step) :
 	print 'Wrote file', filename
 	plt.clf()
 
-#
+
 # Now that we have graphed images of the dataset, we will stitch them
 # together using Mencoder to create a movie.  Each image will become
 # a single frame in the movie.
@@ -91,7 +91,7 @@ for i in range(step) :
 # emulate is (without the initial '#'):
 # mencoder mf://*.png -mf type=png:w=800:h=600:fps=25 -ovc lavc -lavcopts vcodec=mpeg4 -oac copy -o output.avi
 # See the MPlayer and Mencoder documentation for details.
-#
+
 
 command = ('mencoder',
            'mf://output/*.png',
