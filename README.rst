@@ -25,7 +25,7 @@ Here is a simple example how we can use PyOFTK in iPython::
 	Out[5]: 1.4544886960584553
 
 	In [11]: fiber1.modeOverlap(1.03)  
-	Out[11]: 0.61490597532942104
+	Out[11]: 0.6149059753294210
 
 
 Installation
