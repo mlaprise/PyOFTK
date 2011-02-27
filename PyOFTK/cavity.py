@@ -53,7 +53,7 @@ class linearCavity():
 
 		self.dopedFiber = fiber
 	
-		if isinstance(fiber, YbDopedFiber or YbDopedDCOF) or (isinstance(fiber, ErDopedFiber) and pumpWL > 1.450):
+		if isinstance(fiber, YbDopedFiber or YbDopedDCOF) or (isinstance(fiber, ErDopedFiber) and pumpWL > 1.450):	
 			self.nbrSignal = len(pumpWL)
 			self.nbrPump = 0
 			self.pumpWL = 0.980

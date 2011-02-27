@@ -79,6 +79,7 @@ class Amplifier():
 		self.P_p_b = zeros([self.nbrPump, nbrSections])
 		self.P_s_f = zeros([self.nbrSignal, nbrSections])
 		self.P_s_b = zeros([self.nbrSignal, nbrSections])
+		self.sigDC = zeros(self.nbrSignal)
 
 		self.N2 = zeros(nbrSections)
 		self.N1 = zeros(nbrSections)
@@ -264,18 +265,18 @@ class Amplifier():
 
 			# Signal Power
 			for l in arange(self.nbrSignal):
-				P[i] = sign(direction)*(sigma_em_s[l]*N2 - sigma_abs_s[l]*N1 - alpha_s) * P_s_f[l] * Fiber.modeOverlap(sWL[l])
+				P[i] = sign(direction)*(sigma_em_s[l]*N2 - sigma_abs_s[l]*N1 - alpha_s) * P_s_f[l] * Fiber.modeOverlap(sWL[l], self.sigDC[l])
 				i += 1
 			for u in arange(self.nbrSignal):
-				P[i] = -sign(direction)*(sigma_em_s[u]*N2 - sigma_abs_s[u]*N1 - alpha_s) * P_s_b[u] * Fiber.modeOverlap(sWL[u])
+				P[i] = -sign(direction)*(sigma_em_s[u]*N2 - sigma_abs_s[u]*N1 - alpha_s) * P_s_b[u] * Fiber.modeOverlap(sWL[u], self.sigDC[l])
 				i += 1
 
 			# Pump Power
 			for m in arange(self.nbrPump):
-				P[i] = sign(direction)*(-sigma_abs_p[m]*N1 - alpha_p) * P_p_f[m] * Fiber.modeOverlap(pWL[m])
+				P[i] = sign(direction)*(-sigma_abs_p[m]*N1 - alpha_p) * P_p_f[m] * Fiber.pumpOverlap(pWL[m])
 				i += 1
 			for v in arange(self.nbrPump):
-				P[i] = -sign(direction)*(-sigma_abs_p[v]*N1 - alpha_p) * P_p_b[v] * Fiber.modeOverlap(pWL[v])
+				P[i] = -sign(direction)*(-sigma_abs_p[v]*N1 - alpha_p) * P_p_b[v] * Fiber.pumpOverlap(pWL[v])
 				i += 1
 
 			# ASE Power
@@ -334,12 +335,12 @@ class Amplifier():
 		self.invSptProfil()
 
 		for m in arange(self.nbrPump):
-			integrant = sign(direction)*(-self.sigma_abs_p[m]*self.N1[::-1] - self.alpha_p) * self.dopedFiber.modeOverlap(self.pumpWL[m])
+			integrant = sign(direction)*(-self.sigma_abs_p[m]*self.N1[::-1] - self.alpha_p) * self.dopedFiber.pumpOverlap(self.pumpWL[m])
 			self.P_p_b[m,::-1] = r_[Pp_ini[m], Pp_ini[m]*exp(integrate.cumtrapz(integrant, self.z))]
 
 		for l in arange(self.nbrSignal):
 			integrant = sign(direction)*(self.sigma_em_s[l]*self.N2[::-1] - self.sigma_abs_s[l]*self.N1[::-1] - self.alpha_s)
-			integrant *= self.dopedFiber.modeOverlap(self.signalWL[l])
+			integrant *= self.dopedFiber.modeOverlap(self.signalWL[l], self.sigDC[l])
 			self.P_s_b[l,::-1] = r_[Ps_ini[l], Ps_ini[l]*exp(integrate.cumtrapz(integrant, self.z))]
 
 		for v in arange(self.nbrAse):

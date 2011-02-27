@@ -1205,7 +1205,7 @@ def ossmgpu2Amp(up, length, nt, alpha, beta1, kappa, detuning, gamma, nbrArchive
 	### Initialisation of the PyCUDA Stuff ###
 	##########################################
 	
-	dimBlock = (256,1,1)
+	dimBlock = (112,1,1)
 	dimGrid	= (nz/dimBlock[0],1)
 
 	# Convert to float32

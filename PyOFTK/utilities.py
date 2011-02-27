@@ -31,6 +31,7 @@ import scipy.signal as signal
 import scipy.special as sp
 import scipy.optimize as op
 import scipy.fftpack as fftpack
+from numpy.fft import fftshift
 import numpy.linalg as la
 import gtk, gobject
 import os.path
@@ -52,6 +53,17 @@ def chi2(array1, array2):
 	'''
 	nbrPoints = shape(array1)[0]
 	return sqrt( pow((array2-array1),2).sum() ) / nbrPoints
+
+
+def computePhaseSpace(t, w, temporalProfile, spectrumProfile, nbPass):
+
+	tempWidth = zeros(nbPass)
+	specWidth = zeros(nbPass)
+	for i in arange(nbPass):
+		tempWidth[i] = rmsWidth(t, temporalProfile[i])
+		specWidth[i] = rmsWidth(w, spectrumProfile[i])
+
+	return [tempWidth, specWidth]
 
 
 def diffOrder4(y, x):
@@ -131,6 +143,25 @@ def satAbsorber(amplitude, intSat, depthMod):
 	intensity = pow(abs(amplitude),2)
 	transmittance = 1-(depthMod/(1+(intensity/intSat)))
 	return amplitude*transmittance
+
+
+def bandPassFilter(t, SVEAAmp, lambdaZero, filterBW, apodisation = 1.0):
+	'''
+	Bandpass Filter
+	'''
+	C = 2.99792458e-4
+	T = t.max()-t.min()
+	nt = len(t)
+	dt = t[1]-t[0]
+	w = wspace(T,nt)
+	vs = fftshift(w/(2*pi))
+	wavelength = (1/((vs/C)+1/(lambdaZero*1E-9)))*1e9
+
+	spectrumAmp = fftshift(fftpack.fft(SVEAAmp))
+
+	filterEnv=pulse.gaussianPulse(wavelength, filterBW, lambdaZero, 1.0, apodisation)
+
+	return [wavelength, fftpack.ifft(spectrumAmp*filterEnv)]
 
 
 def slowSatAbsorber(amplitude, recoveryTime, energySat, depthMod):
@@ -729,6 +760,13 @@ def normalize(t, pulseInt):
 	tau = t2 / effWidth(t2, pulseInt)
 	dtau=tau[1]-tau[0]
 	return [tau, pulseInt/maxValue]
+
+
+def normalizeInt(t, pulseInt):
+	maxValue = pulseInt.max()
+	maxPos = where(pulseInt==maxValue)
+
+	return pulseInt/maxValue
 
 
 def recenter(t, pulseInt):

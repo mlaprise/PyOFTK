@@ -297,14 +297,17 @@ class FibreStepIndex(OFTKDevice):
 	def width(self, wavelength):
 		return self.rayonCoeur*(0.65+(1.619/pow(self.vNumber(wavelength),3.0/2.0))+(2.879/(pow(self.vNumber(wavelength),6.0))))
 
-	def modeOverlap(self, wavelength):
+	def modeOverlap(self, wavelength, DC=0):
 		'''
 		Estimation de la largeur du mode pour une
 		fibre step-index avec une l'approx gaussienne
 			* Wavelength: Wavelength of the mode [um]
-		'''
-		w = self.width(wavelength)
-		return 1 - exp(-pow((self.rayonCoeur/w),2.0))
+		''' 
+		if DC==0:
+			w = self.width(wavelength)
+			return 1 - exp(-pow((self.rayonCoeur/w),2.0))
+		else:
+			return self.pumpOverlap(wavelength)
 
 	def pumpOverlap(self, wavelength):
 		return self.modeOverlap(wavelength)
@@ -745,6 +748,19 @@ class fbg(FibreStepIndex):
 		return (self.averageIndex/299792458)*(angFrequency-self.angFrequencyBragg)
 
 
+class mirror(FibreStepIndex):
+	''' 
+	Class representing a fiber bragg grating in a step index fiber
+	Inherihit from FibreStepIndex class
+	'''
+
+	def __init__(self, reflectivity):
+		self.reflectivity = reflectivity
+
+	def reflectivity(self, wavelength):
+		return self.reflectivity
+
+
 class simpleFBG(FibreStepIndex):
 	'''
 	Class representing a uniform fiber bragg grating in a step index fiber
@@ -814,6 +830,23 @@ class apodizedFBG(FibreStepIndex):
 		else:
 			return pi*self.deltaIndex*self.eta / (wavelength*1e-6)
 
+	def kappaw(self, angFreq):
+		# Coupling coefficient [m-1]
+
+		wavelength = 2*pi*299792458/angFreq
+		if isinstance(wavelength, numpy.ndarray):
+			LNGTH = len(wavelength)
+			kapVec = zeros(LNGTH)
+			for i in arange(LNGTH):
+				kapVec[i] = pi*self.deltaIndex*self.eta / (wavelength[i])
+			return kapVec
+		else:
+			return pi*self.deltaIndex*self.eta / (wavelength)
+
+	def kappa_old(self, wavelength):
+		# Coupling coefficient [m-1]
+		return pi*self.deltaIndex*self.eta / (self.braggWavelength*1e-6)
+
 	def detuning(self, wavelength):
 		if isinstance(wavelength, numpy.ndarray):
 			LNGTH = len(wavelength)
@@ -880,10 +913,25 @@ class apodizedFBG(FibreStepIndex):
 			LNGTH = len(angFrequency)
 			qVec = zeros(LNGTH, float)
 			for i in arange(LNGTH):
-				qVec[i] = sqrt(pow(self.detuningw(angFrequency[i]),2) - pow(self.kappa(angFrequency[i]),2))
+				qVec[i] = sqrt(pow(self.detuningw(angFrequency[i]),2) - pow(self.kappaw(angFrequency[i]),2))
 			return qVec
 		else:
-			return sqrt(pow(self.detuningw(angFrequency),2) - pow(self.kappa(angFrequency),2))
+			return sqrt(pow(self.detuningw(angFrequency),2) - pow(self.kappaw(angFrequency),2))
+
+
+	def qw_old(self, angFrequency):
+		'''
+		Output q for a given angular frequency
+		[1/m]
+		'''
+		if isinstance(angFrequency, numpy.ndarray):
+			LNGTH = len(angFrequency)
+			qVec = zeros(LNGTH, float)
+			for i in arange(LNGTH):
+				qVec[i] = sqrt(pow(self.detuningw(angFrequency[i]),2) - pow(self.kappa_old(angFrequency[i]),2))
+			return qVec
+		else:
+			return sqrt(pow(self.detuningw(angFrequency),2) - pow(self.kappa_old(angFrequency),2))
 
 	def reflectivity(self, wavelength):
 		# Equation 1.3.29 d'Agrawal (Application)
@@ -934,10 +982,24 @@ class apodizedFBG(FibreStepIndex):
 		# Erreur: je dois modifier le facteur de conversion lambda...
 		return diffM[nbrSamples/2]*(-pow(lambdaVec[nbrSamples/2],2)/(2*pi))
 
+
 	def gBetaM(self, angFreqVec, M):
 		# Grating dispersion order M [sM m-1]
 		# Unstable at high M!
 		qVec = self.qw(angFreqVec)
+		
+		[diffM, angFreqVecCrop]= diffOrder4N(qVec, angFreqVec, M)
+		
+		nbrSamples = len(diffM)
+
+		return diffM[nbrSamples/2]
+
+
+	def gBetaM_old(self, angFreqVec, M):
+		# Grating dispersion order M [sM m-1]
+		# Unstable at high M!
+		# Approx: lambda ~ lambda_bragg (near the bandgap) 
+		qVec = self.qw_old(angFreqVec)
 		
 		[diffM, angFreqVecCrop]= diffOrder4N(qVec, angFreqVec, M)
 		
